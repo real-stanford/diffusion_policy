@@ -1,0 +1,38 @@
+name: kitchen_lowdim
+
+obs_dim: 60
+action_dim: 9
+keypoint_dim: 3
+
+abs_action: True
+robot_noise_ratio: 0.1
+
+env_runner:
+  _target_: diffusion_policy.env_runner.kitchen_lowdim_runner.KitchenLowdimRunner
+  dataset_dir: data/kitchen
+  n_train: 6
+  n_train_vis: 2
+  train_start_seed: 0
+  n_test: 50
+  n_test_vis: 4
+  test_start_seed: 100000
+  max_steps: 280
+  n_obs_steps: ${n_obs_steps}
+  n_action_steps: ${n_action_steps}
+  render_hw: [240, 360]
+  fps: 12.5
+  past_action: ${past_action_visible}
+  abs_action: ${task.abs_action}
+  robot_noise_ratio: ${task.robot_noise_ratio}
+  n_envs: null
+
+dataset:
+  _target_: diffusion_policy.dataset.kitchen_mjl_lowdim_dataset.KitchenMjlLowdimDataset
+  dataset_dir: data/kitchen/kitchen_demos_multitask
+  horizon: ${horizon}
+  pad_before: ${eval:'${n_obs_steps}-1'}
+  pad_after: ${eval:'${n_action_steps}-1'}
+  abs_action: ${task.abs_action}
+  robot_noise_ratio: ${task.robot_noise_ratio}
+  seed: 42
+  val_ratio: 0.02

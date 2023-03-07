@@ -1,0 +1,22 @@
+<mujocoinclude>
+
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <texture name="T_slide_metal" type="cube" height="1" width="1" file="../kitchen/textures/metal1.png"/>
+
+        <material name="M_slide_metal" texture="T_slide_metal" texrepeat="3 3" reflectance="0.7" shininess=".4" texuniform="false"/>
+        <material name="M_slide_blue" rgba=".46 .5 .6 1" reflectance="0.7" shininess=".4"/>
+        <material name="slide_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
+    </asset>
+    <default>
+        <default class="slidecabinet">
+            <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
+            <geom conaffinity="0" contype="0" group="1" material="M_slide_blue" type="mesh"/>
+            <default class="slide_collision">
+                <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="slide_collision_blue"/>
+            </default>
+        </default>
+    </default>
+
+</mujocoinclude>

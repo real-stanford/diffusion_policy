@@ -1,0 +1,31 @@
+<mujocoinclude>
+
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <mesh file="../kitchen/meshes/micro.stl" name="micro"/>
+        <mesh file="../kitchen/meshes/microdoor.stl" name="microdoor"/>
+        <mesh file="../kitchen/meshes/microbutton.stl" name="microbutton"/>
+        <mesh file="../kitchen/meshes/microfeet.stl" name="microfeet"/>
+        <mesh file="../kitchen/meshes/microhandle.stl" name="microhandle"/>
+        <mesh file="../kitchen/meshes/microwindow.stl" name="microwindow"/>
+
+        <texture name="T_micro_metal" type="cube" height="1" width="1" file="../kitchen/textures/metal1.png"/>
+
+        <material name="micro_metal" rgba="1 1 1 1" texture="T_micro_metal" texrepeat="3 3" reflectance="1" shininess="1" texuniform="false"/>
+        <material name="micro_black" rgba=".2 .2 .2 1" reflectance="1" shininess="1"/>
+        <material name="micro_window" rgba=".4 .4 .4 .25" reflectance="1" shininess="1"/>
+        <material name="micro_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
+    </asset>
+
+    <default>
+        <default class="microwave">
+            <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
+            <geom conaffinity="0" contype="0" group="1" material="micro_black" type="mesh"/>
+            <default class="micro_collision">
+                <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="micro_collision_blue" solimp=".8 .9 .01" solref=".02 1"/>
+            </default>
+        </default>
+    </default>
+
+</mujocoinclude>

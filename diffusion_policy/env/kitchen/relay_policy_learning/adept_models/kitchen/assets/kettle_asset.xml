@@ -1,0 +1,23 @@
+<mujocoinclude>
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <mesh file="../kitchen/meshes/kettle.stl" name="kettle"/>
+        <mesh file="../kitchen/meshes/kettlehandle.stl" name="kettlehandle"/>
+
+        <texture name="T_kettle_metal" type="cube" height="1" width="1" file="../kitchen/textures/metal1.png" />
+        <texture name="T_kettle_wood" type="cube" height="1" width="1" file="../kitchen/textures/wood1.png" />
+
+        <material name="kettle_wood" rgba="1 1 1 1" texture="T_kettle_wood" texrepeat="3 3" reflectance="1" shininess="1" texuniform="false" />
+        <material name="kettle_metal" rgba="1 1 1 1" texture="T_kettle_metal" texrepeat="3 3" reflectance="1" shininess="1" texuniform="false" />
+        <material name="kettle_white" rgba=".9 .9 .9 1" reflectance="1" shininess="1" />
+        <material name="kettle_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0" />
+    </asset>
+    <default class="kettle">
+        <joint damping="2" frictionloss="2" armature=".01" limited="true" />
+        <geom conaffinity="0" contype="0" group="1" material="kettle_white" type="mesh"/>
+        <default class="kettle_collision">
+            <geom conaffinity="1" condim="4" contype="1" group="4" margin="0.001" material="kettle_collision_blue" solimp=".8 .9 .01" solref=".02 1" type="mesh"/>
+        </default>
+    </default>
+</mujocoinclude>

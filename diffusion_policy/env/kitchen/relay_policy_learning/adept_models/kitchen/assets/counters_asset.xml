@@ -1,0 +1,32 @@
+<mujocoinclude>
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <mesh file="../kitchen/meshes/cabinetdrawer.stl" name="cabinetdrawer"/>
+        <mesh file="../kitchen/meshes/cabinethandle.stl" name="cabinethandle"/>
+        <mesh file="../kitchen/meshes/cabinetbase.stl" name="cabinetbase"/>
+        <mesh file="../kitchen/meshes/countertop.stl" name="countertop"/>
+        <mesh file="../kitchen/meshes/faucet.stl" name="faucet"/>
+
+        <texture name="T_counter_metal" type="cube" height="1" width="1" file="../kitchen/textures/metal1.png" />
+        <texture name="T_counter_marble" type="cube" height="1" width="1" file="../kitchen/textures/marble1.png" />
+
+        <material name="counter_metal" rgba="1 1 1 1" texture="T_counter_metal" texrepeat="3 3" reflectance=".5" shininess="1" texuniform="false" />
+        <material name="counter_marble"  texture="T_counter_marble" texrepeat="1 1" reflectance=".2" shininess="1" texuniform="false" />
+        <material name="counter_black" rgba=".2 .2 .2 1" reflectance="1" shininess="1"  />
+        <material name="counter_blue" rgba=".46 .5 .6 1" reflectance="1" shininess="1"  />
+        <material name="counter_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0" />
+
+    </asset>
+
+    <default>
+        <default class="counters">
+            <joint damping="2" frictionloss="2" armature=".01" limited="true"/>
+            <geom conaffinity="0" contype="0" group="1" material="counter_metal" type="mesh"/>
+            <default class="counter_collision">
+                <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="counter_collision_blue"/>
+            </default>
+        </default>
+    </default>
+
+</mujocoinclude>

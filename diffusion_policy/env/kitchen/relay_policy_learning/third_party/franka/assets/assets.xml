@@ -1,0 +1,63 @@
+<!-- Modified from the original source code at
+        1) https://github.com/vikashplus/franka
+    which was originally written by Vikash Kumar and licensed under the Apache License= -->
+<mujocoinclude>
+    <compiler angle="radian"/>
+    <!-- <option timestep="0.002" noslip_iterations="20"/> -->
+    <option timestep="0.002"/>
+    <size nuser_actuator="5"/>
+
+    <asset>
+        <mesh name="link0_col" file="../../third_party/franka/meshes/collision/link0.stl"/>
+        <mesh name="link1_col" file="../../third_party/franka/meshes/collision/link1.stl"/>
+        <mesh name="link2_col" file="../../third_party/franka/meshes/collision/link2.stl"/>
+        <mesh name="link3_col" file="../../third_party/franka/meshes/collision/link3.stl"/>
+        <mesh name="link4_col" file="../../third_party/franka/meshes/collision/link4.stl"/>
+        <mesh name="link5_col" file="../../third_party/franka/meshes/collision/link5.stl"/>
+        <mesh name="link6_col" file="../../third_party/franka/meshes/collision/link6.stl"/>
+        <mesh name="link7_col" file="../../third_party/franka/meshes/collision/link7.stl"/>
+        <mesh name="hand_col" file="../../third_party/franka/meshes/collision/hand.stl"/>
+        <mesh name="finger_col" file="../../third_party/franka/meshes/collision/finger.stl" scale='1.75 1.0 1.75'/>
+        <mesh name="link0_viz" file="../../third_party/franka/meshes/visual/link0.stl"/>
+        <mesh name="link1_viz" file="../../third_party/franka/meshes/visual/link1.stl"/>
+        <mesh name="link2_viz" file="../../third_party/franka/meshes/visual/link2.stl"/>
+        <mesh name="link3_viz" file="../../third_party/franka/meshes/visual/link3.stl"/>
+        <mesh name="link4_viz" file="../../third_party/franka/meshes/visual/link4.stl"/>
+        <mesh name="link5_viz" file="../../third_party/franka/meshes/visual/link5.stl"/>
+        <mesh name="link6_viz" file="../../third_party/franka/meshes/visual/link6.stl"/>
+        <mesh name="link7_viz" file="../../third_party/franka/meshes/visual/link7.stl"/>
+        <mesh name="hand_viz" file="../../third_party/franka/meshes/visual/hand.stl"/>
+        <mesh name="finger_viz" file="../../third_party/franka/meshes/collision/finger.stl" scale='1.75 1.0 1.75'/>
+
+    </asset>
+
+    <default>
+        <default class="panda">
+            <joint pos="0 0 0" axis="0 0 1" limited="true"/>
+            <position forcelimited="true" ctrllimited="true" user="1002 40 2001 -0.005 0.005"/>
+            <default class="panda_viz">
+                <geom contype="0" conaffinity="0" group="0" type="mesh" rgba=".95 .99 .92 1" mass="0"/>
+            </default>
+
+            <default class="panda_col">
+                <geom contype="1" conaffinity="1" group="3" type="mesh" rgba=".5 .6 .7 1"/>
+            </default>
+            <default class="panda_arm">
+                <joint damping="100"/>
+            </default>
+             <default class="panda_forearm">
+                <joint damping="10"/>
+            </default>
+             <default class="panda_finger">
+                <joint damping="100" armature='5'/>
+                <geom friction="1 0.5 0.0001" solref="0.01 1" solimp="0.8 0.9 0.001" margin="0.001" user="0" rgba="0.5 0.6 0.7 .4" contype="1" conaffinity="0" condim="6" group="3" />
+                <position user="1002 40 2001 -0.0001 0.0001"/>
+            </default>
+        </default>
+
+        <default class="panda_overlay">
+            <joint limited="false" damping="1000" armature="1" frictionloss="10"/>
+            <geom contype="0" conaffinity="0" group="2" type="mesh" rgba=".42 0.42 0.42 .5"/>
+        </default>
+    </default>
+</mujocoinclude>

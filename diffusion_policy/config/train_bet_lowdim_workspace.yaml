@@ -1,0 +1,132 @@
+defaults:
+  - _self_
+  - task: blockpush_lowdim_seed
+
+name: train_bet_lowdim
+_target_: diffusion_policy.workspace.train_bet_lowdim_workspace.TrainBETLowdimWorkspace
+
+obs_dim: ${task.obs_dim}
+action_dim: ${task.action_dim}
+keypoint_dim: ${task.keypoint_dim}
+task_name: ${task.name}
+exp_name: "default"
+
+horizon: 3
+n_obs_steps: 3
+n_action_steps: 1
+n_latency_steps: 0
+past_action_visible: False
+keypoint_visible_rate: 1.0
+obs_as_local_cond: False
+obs_as_global_cond: False
+pred_action_steps_only: False
+
+policy:
+  _target_: diffusion_policy.policy.bet_lowdim_policy.BETLowdimPolicy
+
+  action_ae:
+    _target_: diffusion_policy.model.bet.action_ae.discretizers.k_means.KMeansDiscretizer
+    num_bins: 24
+    action_dim: ${action_dim}
+    predict_offsets: True
+  
+  obs_encoding_net:
+    _target_: torch.nn.Identity
+    output_dim: ${obs_dim}
+  
+  state_prior:
+    _target_: diffusion_policy.model.bet.latent_generators.mingpt.MinGPT
+
+    discrete_input: false
+    input_dim: ${obs_dim}
+
+    vocab_size: ${policy.action_ae.num_bins}
+
+    # Architecture details
+    n_layer: 4
+    n_head: 4
+    n_embd: 72
+
+    block_size: ${horizon}  # Length of history/context
+    predict_offsets: True
+    offset_loss_scale: 1000.0  # actions are very small
+    focal_loss_gamma: 2.0
+    action_dim: ${action_dim}
+
+  horizon: ${horizon}
+  n_obs_steps: ${n_obs_steps}
+  n_action_steps: ${n_action_steps}
+
+dataloader:
+  batch_size: 256
+  num_workers: 1
+  shuffle: True
+  pin_memory: True
+  persistent_workers: False
+
+val_dataloader:
+  batch_size: 256
+  num_workers: 1
+  shuffle: False
+  pin_memory: True
+  persistent_workers: False
+
+optimizer:
+  learning_rate: 0.0001 # 1e-4
+  weight_decay: 0.1
+  betas: [0.9, 0.95]
+
+training:
+  device: "cuda:0"
+  seed: 42
+  debug: False
+  resume: True
+  # optimization
+  lr_scheduler: cosine
+  lr_warmup_steps: 500
+  num_epochs: 5000
+  gradient_accumulate_every: 1
+  grad_norm_clip: 1.0
+  enable_normalizer: True
+  # training loop control
+  # in epochs
+  rollout_every: 50
+  checkpoint_every: 50
+  val_every: 1
+  sample_every: 5
+  # steps per epoch
+  max_train_steps: null
+  max_val_steps: null
+  # misc
+  tqdm_interval_sec: 1.0
+
+logging:
+  project: diffusion_policy_debug
+  resume: True
+  mode: online
+  name: ${now:%Y.%m.%d-%H.%M.%S}_${name}_${task_name}
+  tags: ["${name}", "${task_name}", "${exp_name}"]
+  id: null
+  group: null
+
+checkpoint:
+  topk:
+    monitor_key: test_mean_score
+    mode: max
+    k: 5
+    format_str: 'epoch={epoch:04d}-test_mean_score={test_mean_score:.3f}.ckpt'
+  save_last_ckpt: True
+  save_last_snapshot: False
+
+multi_run:
+  run_dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+  wandb_name_base: ${now:%Y.%m.%d-%H.%M.%S}_${name}_${task_name}
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+    subdir: ${hydra.job.num}

@@ -1,0 +1,50 @@
+<mujocoinclude>
+
+    <compiler inertiafromgeom="auto" inertiagrouprange="4 4" angle="radian"/>
+
+    <asset>
+        <mesh file="../kitchen/meshes/hood.stl" name="hood"/>
+        <mesh file="../kitchen/meshes/lightswitch.stl" name="lightswitch"/>
+        <mesh file="../kitchen/meshes/lightswitchbase.stl" name="lightswitchbase"/>
+        <mesh file="../kitchen/meshes/knob.stl" name="knob"/>
+        <mesh file="../kitchen/meshes/stoverim.stl" name="stoverim"/>
+        <mesh file="../kitchen/meshes/burnerplate.stl" name="burnerplate"/>
+        <mesh file="../kitchen/meshes/ovenhandle.stl" name="ovenhandle"/>
+        <mesh file="../kitchen/meshes/oven.stl" name="oven"/>
+        <mesh file="../kitchen/meshes/oventop.stl" name="oventop"/>
+        <mesh file="../kitchen/meshes/ovenwindow.stl" name="ovenwindow"/>
+
+        <texture name="T_oven_wood" type="cube" height="1" width="1" file="../kitchen/textures/wood1.png"/>
+        <texture name="T_oven_metal" type="cube" height="1" width="1" file="../kitchen/textures/metal1.png"/>
+
+        <material name="oven_wood" texture="T_oven_wood" texrepeat="3 3" reflectance="0.7" shininess=".4" texuniform="false"/>
+        <material name="oven_metal" rgba="1 1 1 1" texture="T_oven_metal" texrepeat="3 3" reflectance="1" shininess="1" texuniform="false"/>
+        <material name="oven_black" rgba=".15 .15 .15 1" reflectance=".2" shininess=".2" />
+        <material name="oven_burner" rgba="2 0 0 1" reflectance=".2" shininess=".2" />
+        <material name="oven_block" rgba=".1 .1 .1 1"/>
+        <material name="oven_collision_blue" rgba="0.3 0.3 1.0 0.5" shininess="0" specular="0"/>
+    </asset>
+    <default>
+        <default class="oven">
+            <joint armature="0.001" damping="2" limited="true"/>
+            <geom conaffinity="0" contype="0" group="1" material="oven_metal" type="mesh"/>
+            <default class="ovenlight" >
+                <light directional="false" castshadow="true" attenuation="0.03 0.03 0.03" cutoff="100" exponent="25" diffuse=".7 .65 .65" specular=".3 .3 .3"/>
+            </default>
+            <default class="oven_collision">
+                <geom conaffinity="1" condim="3" contype="0" group="4" margin="0.001" material="oven_collision_blue" type="mesh"/>
+            </default>
+        </default>
+    </default>
+
+    <equality>
+        <joint polycoef="0 174 0 0 0" joint1="knob_Joint_1" joint2="burner_Joint_1"/>
+        <joint polycoef="0 174 0 0 0" joint1="knob_Joint_2" joint2="burner_Joint_2"/>
+        <joint polycoef="0 174 0 0 0" joint1="knob_Joint_3" joint2="burner_Joint_3"/>
+        <joint polycoef="0 174 0 0 0" joint1="knob_Joint_4" joint2="burner_Joint_4"/>
+        <joint polycoef="0 14 0 0 0" joint1="lightswitch_joint" joint2="light_joint"/>
+    </equality>
+
+        <equality>
+    </equality>
+</mujocoinclude>

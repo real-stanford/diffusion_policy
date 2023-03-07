@@ -1,0 +1,26 @@
+<mujocoinclude>
+    <asset>
+        <texture name="skybox" type="skybox" builtin="gradient" rgb1=".08 .09 .10" rgb2="0 0 0"
+               width="800" height="800" mark="random" markrgb=".8 .8 .8"/>
+
+
+        <!-- <texture name="texplane" type="2d" builtin="checker" rgb1=".2 .3 .4" rgb2=".1 0.15 0.2" width="512" height="512" markrgb='.1 .1 .1' mark='random' random='.05'/> -->
+        <texture name="texplane" type="2d" height="1" width="1" file="../scenes/textures/white_marble_tile2.png" />
+        <!-- <texture name="texplane" type="2d" height="1" width="1" file="../scenes/textures/floor/floor18.png" mark='edge' markrgb='0 0 0'/> -->
+        <!-- <texture name="texplane" type="2d" height="1" width="1" file="../scenes/textures/floor/floor6.png" mark='edge' markrgb='0 0 0'/> -->
+        <material name='MatPlane' reflectance='0.05' texture="texplane" texrepeat="4 4" texuniform="true"/>
+    </asset>
+
+    <visual>
+        <quality shadowsize="4048"/>
+    </visual>
+
+    <worldbody>
+        <light directional='true' diffuse='.3 .3 .3' specular='0.3 0.3 0.3' pos='-1 -1 1' dir='1 1 -1'/>
+        <light directional='true' diffuse='.3 .3 .3' specular='0.3 0.3 0.3' pos='1 -1 1' dir='-1 1 -1'/>
+        <light directional='true' diffuse='.3 .3 .3' specular='0.3 0.3 0.3' pos='0 1 1' dir='0 -1 -1'/>
+        <geom name='floor' pos='0 0 0' size='5 5 .1' conaffinity='1' contype='1' type='plane' material="MatPlane" condim='3'/>
+        <site name='xaxis' pos='.5 0 0' size='.005 .5' type='capsule' rgba='1 0 0 .25' euler='0 1.57 0' group='3'/>
+        <site name='yaxis' pos='0 .5 0' size='.005 .5' type='capsule' rgba='0 1 0 .25' euler='1.57 0 0' group='3'/>
+    </worldbody>
+</mujocoinclude>

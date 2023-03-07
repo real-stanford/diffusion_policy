@@ -1,0 +1,14 @@
+<mujoco model="microwave">
+    <compiler angle="radian" />
+    <include file='../scenes/basic_scene.xml'/>
+    <include file="../kitchen/assets/microwave_asset.xml"/>
+
+    <worldbody>
+
+        <body>
+		    <include file="../kitchen/assets/microwave_chain.xml"/>
+        </body>
+
+    </worldbody>
+
+</mujoco>

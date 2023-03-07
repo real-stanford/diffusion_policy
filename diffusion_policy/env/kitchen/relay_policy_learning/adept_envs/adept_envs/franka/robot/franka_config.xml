@@ -1,0 +1,59 @@
+<!--Copyright 2020 Google LLC-->
+
+<!--Licensed under the Apache License, Version 2.0 (the "License");-->
+<!--you may not use this file except in compliance with the License.-->
+<!--You may obtain a copy of the License at-->
+
+    <!--https://www.apache.org/licenses/LICENSE-2.0-->
+
+<!--Unless required by applicable law or agreed to in writing, software-->
+<!--distributed under the License is distributed on an "AS IS" BASIS,-->
+<!--WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.-->
+<!--See the License for the specific language governing permissions and-->
+<!--limitations under the License.-->
+<config name='Franka'>
+
+	<!-- Franka -->
+	<qpos0 name='q0' mode='1' mj_dof='0' hardware_dof='0' scale='1' offset='0' pos_bound='-2.9 2.9' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos1 name='q1' mode='1' mj_dof='1' hardware_dof='1' scale='1' offset='0' pos_bound='-1.8 1.8' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos2 name='q2' mode='1' mj_dof='2' hardware_dof='2' scale='1' offset='0' pos_bound='-2.9 2.9' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos3 name='q3' mode='1' mj_dof='3' hardware_dof='3' scale='1' offset='0' pos_bound='-3.1 0.0' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos4 name='q4' mode='1' mj_dof='4' hardware_dof='4' scale='1' offset='0' pos_bound='-2.9 2.9' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos5 name='q5' mode='1' mj_dof='5' hardware_dof='5' scale='1' offset='0' pos_bound='00.0 3.8' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos6 name='q6' mode='1' mj_dof='6' hardware_dof='6' scale='1' offset='0' pos_bound='-2.9 2.9' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos7 name='q7' mode='1' mj_dof='7' hardware_dof='7' scale='1' offset='0' pos_bound='00.0 0.04' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos8 name='q8' mode='1' mj_dof='8' hardware_dof='8' scale='1' offset='0' pos_bound='0.0  0.04' vel_bound='-10 10' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+
+	<!-- Desk -->
+	<qpos9   name='deskSlideB' mode='1' mj_dof='9' hardware_dof='9' scale='1' offset='0' pos_bound='-.5 0.0' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos10  name='deskSlideT' mode='1' mj_dof='10' hardware_dof='10' scale='1' offset='0' pos_bound='-.5 0.0' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+
+	<!-- Buttons -->
+	<qpos11  name='rBotton' mode='1' mj_dof='11' hardware_dof='11' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+	<qpos12  name='gButton' mode='1' mj_dof='12' hardware_dof='12' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+	<qpos13  name='bButton' mode='1' mj_dof='13' hardware_dof='13' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+	<qpos14  name='rLight' mode='1' mj_dof='14' hardware_dof='14' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+	<qpos15  name='bLight' mode='1' mj_dof='15' hardware_dof='15' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+	<qpos16  name='gLight' mode='1' mj_dof='16' hardware_dof='16' scale='1' offset='0' pos_bound='-.005 0.0' vel_bound='-5 5' pos_noise_amp='0.0005' vel_noise_amp='0.005' />
+
+	<!-- Blocks -->
+	<qpos17 name='q17' mode='1' mj_dof='17' hardware_dof='17'  scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos18 name='q18' mode='1' mj_dof='18' hardware_dof='18' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos19 name='q19' mode='1' mj_dof='19' hardware_dof='19' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos20 name='q20' mode='1' mj_dof='20' hardware_dof='20' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos21 name='q21' mode='1' mj_dof='21' hardware_dof='21' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos22 name='q22' mode='1' mj_dof='22' hardware_dof='22' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos23 name='q23' mode='1' mj_dof='23' hardware_dof='23' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos24 name='q24' mode='1' mj_dof='24' hardware_dof='24' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos25 name='q25' mode='1' mj_dof='25' hardware_dof='25' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos26 name='q26' mode='1' mj_dof='26' hardware_dof='26' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos27 name='q27' mode='1' mj_dof='27' hardware_dof='27' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos28 name='q28' mode='1' mj_dof='28' hardware_dof='28' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos29 name='q29' mode='1' mj_dof='29' hardware_dof='29' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos30 name='q30' mode='1' mj_dof='30' hardware_dof='30' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos31 name='q31' mode='1' mj_dof='31' hardware_dof='31' scale='1' offset='0' pos_bound='-1.5 1.5' vel_bound='-5 5' pos_noise_amp='0.005' vel_noise_amp='0.005' />
+	<qpos32 name='q32' mode='1' mj_dof='32' hardware_dof='32' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos33 name='q33' mode='1' mj_dof='33' hardware_dof='33' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+	<qpos34 name='q34' mode='1' mj_dof='34' hardware_dof='34' scale='1' offset='0' pos_bound='-10.57 10.57' vel_bound='-.5 .5' pos_noise_amp='0.1' vel_noise_amp='0.1' />
+
+</config>
