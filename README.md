@@ -10,7 +10,7 @@
 [Cheng Chi](http://cheng-chi.github.io/)<sup>1</sup>,
 [Siyuan Feng](https://www.cs.cmu.edu/~sfeng/)<sup>2</sup>,
 [Yilun Du](https://yilundu.github.io/)<sup>3</sup>,
-[Zhenjia Xu](https://yilundu.github.io/)<sup>1</sup>,
+[Zhenjia Xu](https://www.zhenjiaxu.com/)<sup>1</sup>,
 [Eric Cousineau](https://www.eacousineau.com/)<sup>2</sup>,
 [Benjamin Burchfiel](http://www.benburchfiel.com/)<sup>2</sup>,
 [Shuran Song](https://www.cs.columbia.edu/~shurans/)<sup>1</sup>
