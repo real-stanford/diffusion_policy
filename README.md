@@ -99,7 +99,7 @@ Software:
 `sudo apt install libosmesa6-dev libgl1-mesa-glx libglfw3 patchelf`
 * [RealSense SDK](https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md)
 * Spacemouse dependencies: 
-`sudo apt apt install libspnav-dev spacenavd; sudo systemctl start spacenavd`
+`sudo apt install libspnav-dev spacenavd; sudo systemctl start spacenavd`
 * Conda environment `mamba env create -f conda_environment_real.yaml`
 
 ## 🖥️ Reproducing Simulation Benchmark Results 
