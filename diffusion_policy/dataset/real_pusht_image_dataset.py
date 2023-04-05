@@ -84,7 +84,7 @@ class RealPushTImageDataset(BaseImageDataset):
         if delta_action:
             # replace action as relative to previous frame
             actions = replay_buffer['action'][:]
-            # suport positions only at this time
+            # support positions only at this time
             assert actions.shape[1] <= 3
             actions_diff = np.zeros_like(actions)
             episode_ends = replay_buffer.episode_ends[:]
@@ -93,8 +93,8 @@ class RealPushTImageDataset(BaseImageDataset):
                 if i > 0:
                     start = episode_ends[i-1]
                 end = episode_ends[i]
-                # delta action is the difference between previous desired postion and the current
-                # it should be scheduled at the previous timestep for the curren timestep
+                # delta action is the difference between previous desired position and the current
+                # it should be scheduled at the previous timestep for the current timestep
                 # to ensure consistency with positional mode
                 actions_diff[start+1:end] = np.diff(actions[start:end], axis=0)
             replay_buffer['action'][:] = actions_diff

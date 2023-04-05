@@ -91,7 +91,7 @@ class RobomimicLowdimRunner(BaseLowdimRunner):
             n_envs = n_train + n_test
 
         # handle latency step
-        # to mimic latency, we request n_latency_steps addtional steps 
+        # to mimic latency, we request n_latency_steps additional steps 
         # of past observations, and the discard the last n_latency_steps
         env_n_obs_steps = n_obs_steps + n_latency_steps
         env_n_action_steps = n_action_steps

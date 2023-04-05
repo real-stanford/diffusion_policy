@@ -96,7 +96,7 @@ class DrawOptions(pymunk.SpaceDebugDrawOptions):
 
         See pygame_util.demo.py for a full example
 
-        Since pygame uses a coordiante system where y points down (in contrast
+        Since pygame uses a coordinate system where y points down (in contrast
         to many other cases), you either have to make the physics simulation
         with Pymunk also behave in that way, or flip everything when you draw.
 
@@ -226,7 +226,7 @@ def to_pygame(p: Tuple[float, float], surface: pygame.Surface) -> Tuple[int, int
     """Convenience method to convert pymunk coordinates to pygame surface
     local coordinates.
 
-    Note that in case positive_y_is_up is False, this function wont actually do
+    Note that in case positive_y_is_up is False, this function won't actually do
     anything except converting the point to integers.
     """
     if positive_y_is_up:

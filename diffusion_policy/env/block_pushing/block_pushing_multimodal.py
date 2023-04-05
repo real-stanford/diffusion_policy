@@ -615,7 +615,7 @@ class BlockPushMultimodal(block_pushing.BlockPush):
 
         WARNING: py_environment wrapper assumes environments aren't reset in their
         constructor and will often reset the environment unintentionally. It is
-        always recommeneded that you call env.reset on the tfagents wrapper before
+        always recommended that you call env.reset on the tfagents wrapper before
         playback (replaying pybullet_state).
 
         Args:

@@ -21,7 +21,7 @@ class RotationTransformer:
         """
         Valid representations
 
-        Alwasy use matrix as intermediate representation.
+        Always use matrix as intermediate representation.
         """
         assert from_rep != to_rep
         assert from_rep in self.valid_reps

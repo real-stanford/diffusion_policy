@@ -15,7 +15,7 @@ class Spacemouse(mp.Process):
             n_buttons=2,
             ):
         """
-        Continously listen to 3D connecion space naviagtor events
+        Continuously listen to 3D connection space naviagtor events
         and update the latest state.
 
         max_value: {300, 500} 300 for wired version and 500 for wireless
@@ -36,7 +36,7 @@ class Spacemouse(mp.Process):
             deadzone = np.array(deadzone, dtype=dtype)
         assert (deadzone >= 0).all()
 
-        # copied varaibles
+        # copied variables
         self.frequency = frequency
         self.max_value = max_value
         self.dtype = dtype

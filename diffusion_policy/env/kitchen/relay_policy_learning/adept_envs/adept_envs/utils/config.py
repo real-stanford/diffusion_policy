@@ -87,7 +87,7 @@ if __name__ == '__main__':
                                                   float))
     print("data:type \t", read_config_from_node(root, "data", "type", str))
 
-    # read straight from xml (dum the XML data as duh.xml for this test)
+    # read straight from xml (dumb the XML data as duh.xml for this test)
     root, root_name = get_config_root_node(config_file_name="duh.xml")
     print("Read from xml --------------------------------")
     print("limit:low \t", read_config_from_xml("duh.xml", "limits", "low",

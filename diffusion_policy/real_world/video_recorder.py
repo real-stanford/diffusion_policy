@@ -128,7 +128,7 @@ class VideoRecorder:
                 dt=1/self.fps,
                 next_global_idx=self.next_global_idx
             )
-            # number of apperance means repeats
+            # number of appearance means repeats
             n_repeats = len(local_idxs)
         
         if self.shape is None:

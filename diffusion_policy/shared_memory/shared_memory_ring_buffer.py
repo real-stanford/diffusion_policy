@@ -25,7 +25,7 @@ class SharedMemoryRingBuffer:
         ):
         """
         shm_manager: Manages the life cycle of share memories 
-            across processes. Remeber to run .start() before passing.
+            across processes. Remember to run .start() before passing.
         array_specs: Name, shape and type of arrays for a single time step.
         get_max_k: The maxmum number of items can be queried at once.
         get_time_budget: The maxmum amount of time spent copying data from 

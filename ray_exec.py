@@ -40,7 +40,7 @@ def worker_fn(command_args, data_src=None, unbuffer_python=False, use_shell=Fals
     if use_shell:
         command_args = ' '.join(command_args)
 
-    # stdout passtrough to ray worker, which is then passed to ray driver
+    # stdout passthrough to ray worker, which is then passed to ray driver
     process = subprocess.Popen(
         args=command_args, 
         env=process_env,

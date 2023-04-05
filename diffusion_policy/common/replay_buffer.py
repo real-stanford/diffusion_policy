@@ -84,7 +84,7 @@ def get_optimal_chunks(shape, dtype,
 class ReplayBuffer:
     """
     Zarr-based temporal datastructure.
-    Assumes first dimention to be time. Only chunk in time dimension.
+    Assumes first dimension to be time. Only chunk in time dimension.
     """
     def __init__(self, 
             root: Union[zarr.Group, 
@@ -216,7 +216,7 @@ class ReplayBuffer:
         Recommended
         """
         if backend == 'numpy':
-            print('backend argument is depreacted!')
+            print('backend argument is deprecated!')
             store = None
         group = zarr.open(os.path.expanduser(zarr_path), 'r')
         return cls.copy_from_store(src_store=group.store, store=store, 

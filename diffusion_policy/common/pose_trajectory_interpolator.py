@@ -28,7 +28,7 @@ class PoseTrajectoryInterpolator:
             poses = np.array(poses)
 
         if len(times) == 1:
-            # special treatement for single step interpolation
+            # special treatment for single step interpolation
             self.single_step = True
             self._times = times
             self._poses = poses
@@ -69,7 +69,7 @@ class PoseTrajectoryInterpolator:
         should_keep = (start_t < times) & (times < end_t)
         keep_times = times[should_keep]
         all_times = np.concatenate([[start_t], keep_times, [end_t]])
-        # remove duplicates, Slerp requries strictly increasing x
+        # remove duplicates, Slerp requires strictly increasing x
         all_times = np.unique(all_times)
         # interpolate
         all_poses = self(all_times)

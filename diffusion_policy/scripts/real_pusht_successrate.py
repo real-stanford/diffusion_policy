@@ -16,7 +16,7 @@ import json
 @click.command()
 @click.option(
     '--reference', '-r', required=True,
-    help='Reference metrics_raw.json from demostration dataset.'
+    help='Reference metrics_raw.json from demonstration dataset.'
 )
 @click.option(
     '--input', '-i', required=True,

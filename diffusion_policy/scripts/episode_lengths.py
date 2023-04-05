@@ -16,8 +16,8 @@ from diffusion_policy.common.replay_buffer import ReplayBuffer
 @click.option('--dt', default=0.1, type=float)
 def main(input, dt):
     buffer = ReplayBuffer.create_from_path(input)
-    lenghts = buffer.episode_lengths
-    durations = lenghts * dt
+    lengths = buffer.episode_lengths
+    durations = lengths * dt
     result = {
         'duration/mean': np.mean(durations)
     }

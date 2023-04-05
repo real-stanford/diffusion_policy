@@ -40,7 +40,7 @@ class RobotEnv(mujoco_env.MujocoEnv):
 
     # Mapping of device path to the calibration file to use. If the device path
     # is not found, the 'default' key is used.
-    # This can be overriden by subclasses.
+    # This can be overridden by subclasses.
     CALIBRATION_PATHS = {}
 
     def __init__(self,

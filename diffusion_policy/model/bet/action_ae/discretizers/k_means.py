@@ -41,7 +41,7 @@ class KMeansDiscretizer(DictOfTensorMixin):
     @classmethod
     def _kmeans(cls, x: torch.Tensor, ncluster: int = 512, niter: int = 50):
         """
-        Simple k-means clustering algorithm adapted from Karpathy's minGPT libary
+        Simple k-means clustering algorithm adapted from Karpathy's minGPT library
         https://github.com/karpathy/minGPT/blob/master/play_image.ipynb
         """
         N, D = x.size()

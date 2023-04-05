@@ -44,7 +44,7 @@ class PushTEnv(gym.Env):
         # Local controller params.
         self.k_p, self.k_v = 100, 20    # PD control.z
         self.control_hz = self.metadata['video.frames_per_second']
-        # legcay set_state for data compatiblity
+        # legcay set_state for data compatibility
         self.legacy = legacy
 
         # agent_pos, block_pos, block_angle
@@ -92,7 +92,7 @@ class PushTEnv(gym.Env):
         if self.damping is not None:
             self.space.damping = self.damping
         
-        # use legacy RandomState for compatiblity
+        # use legacy RandomState for compatibility
         state = self.reset_to_state
         if state is None:
             rs = np.random.RandomState(seed=seed)
@@ -163,7 +163,7 @@ class PushTEnv(gym.Env):
         inertia = pymunk.moment_for_box(mass, (50, 100))
         body = pymunk.Body(mass, inertia)
         # preserving the legacy assignment order for compatibility
-        # the order here dosn't matter somehow, maybe because CoM is aligned with body origin
+        # the order here doesn't matter somehow, maybe because CoM is aligned with body origin
         body.position = pose[:2].tolist()
         body.angle = pose[2]
         return body
@@ -210,7 +210,7 @@ class PushTEnv(gym.Env):
             pygame.event.pump()
             pygame.display.update()
 
-            # the clock is aleady ticked during in step for "human"
+            # the clock is already ticked during in step for "human"
 
 
         img = np.transpose(
@@ -255,7 +255,7 @@ class PushTEnv(gym.Env):
         # if not the same as CoM
         # therefore should be modified first.
         if self.legacy:
-            # for compatiblity with legacy data
+            # for compatibility with legacy data
             self.block.position = pos_block
             self.block.angle = rot_block
         else:
@@ -307,7 +307,7 @@ class PushTEnv(gym.Env):
         self.goal_color = pygame.Color('LightGreen')
         self.goal_pose = np.array([256,256,np.pi/4])  # x, y, theta (in radians)
 
-        # Add collision handeling
+        # Add collision handling
         self.collision_handeler = self.space.add_collision_handler(0, 0)
         self.collision_handeler.post_solve = self._handle_collision
         self.n_contact_points = 0

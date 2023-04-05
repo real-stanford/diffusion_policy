@@ -8,7 +8,7 @@ import time
 class Spacemouse(Thread):
     def __init__(self, max_value=500, deadzone=(0,0,0,0,0,0), dtype=np.float32):
         """
-        Continously listen to 3D connecion space naviagtor events
+        Continuously listen to 3D connection space naviagtor events
         and update the latest state.
 
         max_value: {300, 500} 300 for wired version and 500 for wireless

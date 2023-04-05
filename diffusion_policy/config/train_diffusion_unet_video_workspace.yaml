@@ -39,7 +39,7 @@ policy:
 
       norm_groups: 8
       input_channel: 3
-      model_depth: 50 # ResNet 50 (18,34 not yet avaliable)
+      model_depth: 50 # ResNet 50 (18,34 not yet available)
     
     pool:
       _target_: diffusion_policy.model.ibc.global_avgpool.GlobalAvgpool

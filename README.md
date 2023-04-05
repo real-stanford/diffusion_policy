@@ -204,7 +204,7 @@ data/outputs/2023.03.01/22.13.58_train_diffusion_unet_hybrid_pusht_image
 ```
 
 ## 🦾 Demo, Training and Eval on a Real Robot
-Make sure your UR5 robot is running and accepting command from its network interface (emergency stop button within reach at all time), your RealSense cameras plugged in to your workstation (tested with `realsense-viewer`) and your SpaceMouse connected with the `spacenavd` deamon running (verify with `systemctl status spacenavd`).
+Make sure your UR5 robot is running and accepting command from its network interface (emergency stop button within reach at all time), your RealSense cameras plugged in to your workstation (tested with `realsense-viewer`) and your SpaceMouse connected with the `spacenavd` daemon running (verify with `systemctl status spacenavd`).
 
 Start the demonstration collection script. Press "C" to start recording. Use SpaceMouse to move the robot. Press "S" to stop recording. 
 ```console

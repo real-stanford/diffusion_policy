@@ -27,7 +27,7 @@ class PushTKeypointsEnv(PushTEnv):
         ws = self.window_size
 
         if local_keypoint_map is None:
-            # create default keypoint definiton
+            # create default keypoint definition
             kp_kwargs = self.genenerate_keypoint_manager_params()
             local_keypoint_map = kp_kwargs['local_keypoint_map']
             color_map = kp_kwargs['color_map']
@@ -107,7 +107,7 @@ class PushTKeypointsEnv(PushTEnv):
         obs = kps.flatten()
         obs_mask = kps_mask.flatten()
         if not self.agent_keypoints:
-            # passing agent position when keypoints are not avaiable
+            # passing agent position when keypoints are not available
             agent_pos = np.array(self.agent.position)
             obs = np.concatenate([
                 obs, agent_pos

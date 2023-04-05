@@ -13,7 +13,7 @@ def get_accumulate_timestamp_idxs(
     ) -> Tuple[List[int], List[int], int]:
     """
     For each dt window, choose the first timestamp in the window.
-    Assumes timestamps sorted. One timestamp might be chosen mulitple times due to dropped frames.
+    Assumes timestamps sorted. One timestamp might be chosen multiple times due to dropped frames.
     next_global_idx should start at 0 normally, and then use the returned next_global_idx. 
     However, when overwiting previous values are desired, set last_global_idx to None.
 
@@ -60,7 +60,7 @@ def align_timestamps(
         allow_negative=True
     )
     if len(global_idxs) > len(target_global_idxs):
-        # if more steps avaliable, truncate
+        # if more steps available, truncate
         global_idxs = global_idxs[:len(target_global_idxs)]
         local_idxs = local_idxs[:len(target_global_idxs)]
     
@@ -216,7 +216,7 @@ class TimestampActionAccumulator:
                 self.action_buffer = np.resize(self.action_buffer, new_shape)
                 self.timestamp_buffer = np.resize(self.timestamp_buffer, (new_size,))
             
-            # potentally rewrite old data (as expected)
+            # potentially rewrite old data (as expected)
             self.action_buffer[global_idxs] = actions[local_idxs]
             self.timestamp_buffer[global_idxs] = timestamps[local_idxs]
             self.size = max(self.size, this_max_size)

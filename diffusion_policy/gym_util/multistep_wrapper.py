@@ -39,10 +39,10 @@ def dict_take_last_n(x, n):
 
 def aggregate(data, method='max'):
     if method == 'max':
-        # equivelent to any
+        # equivalent to any
         return np.max(data)
     elif method == 'min':
-        # equivelent to all
+        # equivalent to all
         return np.min(data)
     elif method == 'mean':
         return np.mean(data)

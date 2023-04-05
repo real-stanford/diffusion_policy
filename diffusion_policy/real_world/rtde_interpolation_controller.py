@@ -21,8 +21,8 @@ class Command(enum.Enum):
 
 class RTDEInterpolationController(mp.Process):
     """
-    To ensure sending commnd to the robot with predictable latency
-    this controller need its seperate process (due to python GIL)
+    To ensure sending command to the robot with predictable latency
+    this controller need its separate process (due to python GIL)
     """
 
 
@@ -54,7 +54,7 @@ class RTDEInterpolationController(mp.Process):
         tcp_offset_pose: 6d pose
         payload_mass: float
         payload_cog: 3d position, center of gravity
-        soft_real_time: enables round-robbin scheduling and real-time priority
+        soft_real_time: enables round-robin scheduling and real-time priority
             requires running scripts/rtprio_setup.sh before hand.
 
         """
