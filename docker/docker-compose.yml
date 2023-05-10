@@ -1,0 +1,24 @@
+version: "3.9"
+
+################################################################################
+
+services:
+  latest:
+    runtime: nvidia
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${USER}/diffusion-policy:latest
+    container_name: ${USER}_diffusion_policy
+    network_mode: host
+    privileged: true
+    shm_size: '2gb'
+    volumes:
+      - ${PWD}/../:/root/workspace
+      - /tmp/.x11-unix:/tmp/.x11-unix
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - WANDB_API_KEY=${WANDB_API_KEY}
+    command: ./workspace/docker/initialize-docker-container.sh
+
