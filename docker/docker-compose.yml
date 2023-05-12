@@ -12,7 +12,7 @@ services:
     container_name: ${USER}_diffusion_policy
     network_mode: host
     privileged: true
-    shm_size: '2gb'
+    shm_size: '50gb'
     volumes:
       - ${PWD}/../:/root/workspace
       - /tmp/.x11-unix:/tmp/.x11-unix
