@@ -20,5 +20,9 @@ services:
       - DISPLAY=${DISPLAY}
       - QT_X11_NO_MITSHM=1
       - WANDB_API_KEY=${WANDB_API_KEY}
+      # Hack with HDF5 file locking
+      - HDF5_USE_FILE_LOCKING=FALSE
+      # For debugging with Hydra
+      - HYDRA_FULL_ERROR=1
     command: ./workspace/docker/initialize-docker-container.sh
 
