@@ -6,6 +6,7 @@ data
 data_local
 .vscode
 _wandb
+configs
 
 **/.DS_Store
 

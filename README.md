@@ -29,7 +29,7 @@ cd utils
 ./DOWNLOAD_DATASETS.sh
 ```
 
-### Download Configs (TBD)
+### Download Configs
 ```bash
 cd utils
 ./DOWNLOAD_CONFIGS.sh
