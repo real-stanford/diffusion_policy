@@ -22,6 +22,47 @@
 <img src="media/teaser.png" alt="drawing" width="100%"/>
 <img src="media/multimodal_sim.png" alt="drawing" width="100%"/>
 
+## Creating Environments (Added by @tmats)
+### Download Datasets
+```bash
+cd utils
+./DOWNLOAD_DATASETS.sh
+```
+
+### Download Configs (TBD)
+```bash
+cd utils
+./DOWNLOAD_CONFIGS.sh
+```
+
+### Build Docker Image
+Build Docker image, 
+```bash
+cd docker
+./BUILD_DOCKER_IMAGE.sh
+```
+The image name will be `${USER}/diffusion-policy:latest`
+
+### Run Docker Container
+First place your wandb API key into `docker/wandb.key`
+```bash
+vim docker/wandb.key
+```
+Next, run docker container, 
+```bash
+cd docker
+./RUN_DOCKER_CONTAINER.sh
+```
+The container name will be `${USER}_diffusion_policy`.
+
+To login the container,
+```bash
+docker exec -it ${USER}_diffusion_policy zsh
+```
+
+Note that the container uses zsh (conda is activated with zsh).
+
+
 ## 🛝 Try it out!
 Our self-contained Google Colab notebooks is the easiest way to play with Diffusion Policy. We provide separate notebooks for  [state-based environment](https://colab.research.google.com/drive/1gxdkgRVfM55zihY9TFLja97cSVZOZq2B?usp=sharing) and [vision-based environment](https://colab.research.google.com/drive/18GIHeOQ5DyjMN8iIRZL2EKZ0745NLIpg?usp=sharing).
 
