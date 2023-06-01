@@ -235,7 +235,15 @@ class BlockPushLowdimRunner(BaseLowdimRunner):
         prefix_counts = collections.defaultdict(lambda : 0)
 
         log_data = dict()
-        for i in range(len(self.env_fns)):
+        # results reported in the paper are generated using the commented out line below
+        # which will only report and average metrics from first n_envs initial condition and seeds
+        # fortunately this won't invalidate our conclusion since
+        # 1. This bug only affects the variance of metrics, not their mean
+        # 2. All baseline methods are evaluated using the same code
+        # to completely reproduce reported numbers, uncomment this line:
+        # for i in range(len(self.env_fns)):
+        # and comment out this line
+        for i in range(n_inits):
             seed = self.env_seeds[i]
             prefix = self.env_prefixs[i]
             this_rewards = all_rewards[i]
