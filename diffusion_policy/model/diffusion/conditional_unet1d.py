@@ -226,7 +226,7 @@ class ConditionalUnet1D(nn.Module):
         for idx, (resnet, resnet2, upsample) in enumerate(self.up_modules):
             x = torch.cat((x, h.pop()), dim=1)
             x = resnet(x, global_feature)
-            if idx == len(self.up_modules) and len(h_local) > 0:
+            if idx == (len(self.up_modules)-1) and len(h_local) > 0:
                 x = x + h_local[1]
             x = resnet2(x, global_feature)
             x = upsample(x)
