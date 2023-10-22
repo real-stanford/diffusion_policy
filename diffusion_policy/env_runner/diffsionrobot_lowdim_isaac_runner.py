@@ -69,39 +69,43 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             leave=False, mininterval=self.tqdm_interval_sec)
         done = False
         
-        # history = 2
-        # state_history = torch.zeros((env.num_envs, history, env.num_states), dtype=torch.float32, device=self.device)
-        # action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=self.device)
+        history = 2
+        state_history = torch.zeros((env.num_envs, history, env.num_states), dtype=torch.float32, device=self.device)
+        action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=self.device)
+        
+        state_history[:,:,:] = obs[:,None,:] # (env.num_envs, 1, env.num_states)
+        
+        obs_dict = {'state': state_history, 'past_action': action_history}
         
         while not done:
             # create obs dict
-            np_obs_dict = {'state': obs}
-            if self.past_action and (past_action is not None):
-                # TODO: not tested
-                np_obs_dict['past_action'] = past_action[
-                    :,-(self.n_obs_steps-1):].astype(np.float32)
-            
-            # device transfer
-            obs_dict = dict_apply(np_obs_dict, 
-                lambda x: torch.from_numpy(x).to(
-                    device=device))
+            # np_obs_dict = {'state': obs}
+            # if self.past_action and (past_action is not None):
+            #     # TODO: not tested
+            #     np_obs_dict['past_action'] = past_action[
+            #         :,-(self.n_obs_steps-1):].astype(np.float32)
 
             # run policy
             with torch.no_grad():
                 action_dict = policy.predict_action(obs_dict)
 
-            # device_transfer
-            np_action_dict = dict_apply(action_dict,
-                lambda x: x.detach().to('cpu').numpy())
-
-            action = np_action_dict['action']
+            action = action_dict['action']
 
             # step env
             obs, reward, done, info = env.step(action)
             
+            state_history = torch.roll(state_history, shifts=-1, dims=1)
+            action_history = torch.roll(action_history, shifts=-1, dims=1)
+            state_history[:,-1,:] = obs
+            action_history[:,-1,:] = action
+            
             # reset env
             env_ids = torch.nonzero(done, as_tuple=False).squeeze(1).int()
             obs = env.reset(env_ids)
+            if len(env_ids) > 0:
+                state_history[env_ids,:,:] = obs[:,None,:]
+                action_history[env_ids,:,:] = 0.0
+            
             
             done = np.all(done)
             past_action = action
