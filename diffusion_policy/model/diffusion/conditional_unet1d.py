@@ -33,7 +33,7 @@ class ConditionalResidualBlock1D(nn.Module):
             cond_channels = out_channels * 2
         self.cond_predict_scale = cond_predict_scale
         self.out_channels = out_channels
-        self.cond_encoder = nn.Sequential(
+        self.cond_encoder = nn.Sequential(                  # Linear process of observation
             nn.Mish(),
             nn.Linear(cond_dim, cond_channels),
             Rearrange('batch t -> batch t 1'),
@@ -58,7 +58,7 @@ class ConditionalResidualBlock1D(nn.Module):
                 embed.shape[0], 2, self.out_channels, 1)
             scale = embed[:,0,...]
             bias = embed[:,1,...]
-            out = scale * out + bias
+            out = scale * out + bias                # Out is just x
         else:
             out = out + embed
         out = self.blocks[1](out)

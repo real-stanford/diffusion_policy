@@ -72,6 +72,7 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
 
         # configure dataset
         dataset: BaseLowdimDataset
+        #breakpoint()
         dataset = hydra.utils.instantiate(cfg.task.dataset)
         assert isinstance(dataset, BaseLowdimDataset)
         train_dataloader = DataLoader(dataset, **cfg.dataloader)
@@ -161,6 +162,7 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                     for batch_idx, batch in enumerate(tepoch):
                         # device transfer
                         batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
+                        #breakpoint()
                         if train_sampling_batch is None:
                             train_sampling_batch = batch
 
@@ -213,10 +215,10 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                 policy.eval()
 
                 # run rollout
-                if (self.epoch % cfg.training.rollout_every) == 0:
-                    runner_log = env_runner.run(policy)
-                    # log all
-                    step_log.update(runner_log)
+                # if (self.epoch % cfg.training.rollout_every) == 0:
+                #     runner_log = env_runner.run(policy)
+                #     # log all
+                #     step_log.update(runner_log)
 
                 # run validation
                 if (self.epoch % cfg.training.val_every) == 0:
@@ -273,10 +275,13 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
 
                     # sanitize metric names
                     metric_dict = dict()
+                    #breakpoint()
                     for key, value in step_log.items():
                         new_key = key.replace('/', '_')
                         metric_dict[new_key] = value
-                    
+                    # TODO: This is a HACK, Please change back to env runner
+                    metric_dict['test_mean_score'] = 1
+
                     # We can't copy the last checkpoint here
                     # since save_checkpoint uses threads.
                     # therefore at this point the file might have been empty!

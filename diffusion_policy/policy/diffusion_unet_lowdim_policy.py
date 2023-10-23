@@ -212,6 +212,7 @@ class DiffusionUnetLowdimPolicy(BaseLowdimPolicy):
         if self.pred_action_steps_only:
             condition_mask = torch.zeros_like(trajectory, dtype=torch.bool)
         else:
+            #breakpoint()
             condition_mask = self.mask_generator(trajectory.shape)
 
         # Sample noise that we'll add to the images

@@ -190,6 +190,7 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
     
         # set step values
         scheduler.set_timesteps(self.num_inference_steps)
+        #breakpoint()
 
         for t in scheduler.timesteps:
             # 1. apply conditioning
@@ -253,6 +254,8 @@ class DiffusionUnetHybridImagePolicy(BaseImagePolicy):
             cond_mask = torch.zeros_like(cond_data, dtype=torch.bool)
             cond_data[:,:To,Da:] = nobs_features
             cond_mask[:,:To,Da:] = True
+
+        #breakpoint()
 
         # run sampling
         nsample = self.conditional_sample(
