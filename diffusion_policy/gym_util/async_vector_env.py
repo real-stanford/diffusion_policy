@@ -83,7 +83,7 @@ class AsyncVectorEnv(VectorEnv):
         dummy_env_fn=None,
         observation_space=None,
         action_space=None,
-        shared_memory=True,
+        shared_memory=False,
         copy=True,
         context=None,
         daemon=True,
@@ -123,7 +123,7 @@ class AsyncVectorEnv(VectorEnv):
                 )
             except CustomSpaceError:
                 raise ValueError(
-                    "Using `shared_memory=True` in `AsyncVectorEnv` "
+                    "Using `shared_memory=False` in `AsyncVectorEnv` "
                     "is incompatible with non-standard Gym observation spaces "
                     "(i.e. custom spaces inheriting from `gym.Space`), and is "
                     "only compatible with default Gym spaces (e.g. `Box`, "

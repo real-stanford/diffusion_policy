@@ -70,12 +70,12 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         done = False
         
         history = 2
-        state_history = torch.zeros((env.num_envs, history, env.num_states), dtype=torch.float32, device=self.device)
-        action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=self.device)
+        state_history = torch.zeros((env.num_envs, history, env.num_obs), dtype=torch.float32, device=device)
+        action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=device)
         
         state_history[:,:,:] = obs[:,None,:] # (env.num_envs, 1, env.num_states)
         
-        obs_dict = {'state': state_history, 'past_action': action_history}
+        obs_dict = {'obs': state_history} #, 'past_action': action_history}
         
         while not done:
             # create obs dict
@@ -92,21 +92,23 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             action = action_dict['action']
 
             # step env
-            obs, reward, done, info = env.step(action)
+            for i in range(self.n_action_steps):
+                action_step = action[:,i,:]
+                obs, reward, done, info = env.step(action_step)
             
-            state_history = torch.roll(state_history, shifts=-1, dims=1)
-            action_history = torch.roll(action_history, shifts=-1, dims=1)
-            state_history[:,-1,:] = obs
-            action_history[:,-1,:] = action
+                state_history = torch.roll(state_history, shifts=-1, dims=1)
+                action_history = torch.roll(action_history, shifts=-1, dims=1)
+                state_history[:,-1,:] = obs
+                action_history[:,-1,:] = action_step
             
             # reset env
             env_ids = torch.nonzero(done, as_tuple=False).squeeze(1).int()
             obs = env.reset(env_ids)
             if len(env_ids) > 0:
-                state_history[env_ids,:,:] = obs[:,None,:]
+                state_history[env_ids,:,:] = obs[env_ids,None,:]
                 action_history[env_ids,:,:] = 0.0
-            
-            
+             
+            done = done.cpu().numpy()
             done = np.all(done)
             past_action = action
 
