@@ -31,10 +31,11 @@ class PushTLowdimDataset(BaseLowdimDataset):
             val_ratio=val_ratio,
             seed=seed)
         train_mask = ~val_mask
-        train_mask = downsample_mask(
-            mask=train_mask, 
-            max_n=max_train_episodes, 
-            seed=seed)
+        self.val_mask = val_mask
+        # train_mask = downsample_mask(
+        #     mask=train_mask, 
+        #     max_n=max_train_episodes, 
+        #     seed=seed)
 
         self.sampler = SequenceSampler(
             replay_buffer=self.replay_buffer, 

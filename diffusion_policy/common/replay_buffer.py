@@ -95,7 +95,6 @@ class ReplayBuffer:
         assert('data' in root)
         assert('meta' in root)
         assert('episode_ends' in root['meta'])
-        #breakpoint()
         for key, value in root['data'].items():
             value = value[:root['meta']['episode_ends'][-1]]
             assert(value.shape[0] == root['meta']['episode_ends'][-1])

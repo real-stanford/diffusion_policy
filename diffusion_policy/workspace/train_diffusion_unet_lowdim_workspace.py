@@ -257,6 +257,10 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                         mse = torch.nn.functional.mse_loss(pred_action, gt_action)
                         # log
                         step_log['train_action_mse_error'] = mse.item()
+                        
+                        for i in range(31):
+                            step_log['joint_{}'.format(i)] = torch.mean(torch.abs(pred_action[:,i] - gt_action[:,i]))
+                        
                         # release RAM
                         del batch
                         del obs_dict

@@ -9,7 +9,7 @@ checkpoint:
     mode: max
     monitor_key: test_mean_score
 dataloader:
-  batch_size: 256
+  batch_size: 620
   num_workers: 1
   persistent_workers: false
   pin_memory: true
@@ -22,7 +22,7 @@ ema:
   power: 0.75
   update_after_step: 0
 exp_name: default
-horizon: 16
+horizon: 32
 keypoint_dim: 2
 keypoint_visible_rate: 1.0
 logging:
@@ -41,9 +41,9 @@ multi_run:
   wandb_name_base: 2023.01.16-20.10.02_train_diffusion_unet_lowdim_pusht_lowdim
 n_action_steps: 8
 n_latency_steps: 0
-n_obs_steps: 2
+n_obs_steps: 4
 name: train_diffusion_unet_lowdim
-obs_as_global_cond: false
+obs_as_global_cond: true
 obs_as_local_cond: false
 obs_dim: 253
 optimizer:
@@ -52,13 +52,13 @@ optimizer:
   - 0.95
   - 0.999
   eps: 1.0e-08
-  lr: 0.0001
+  lr: 5.0e-5
   weight_decay: 1.0e-06
 past_action_visible: false
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_lowdim_policy.DiffusionUnetLowdimPolicy
   action_dim: 31
-  horizon: 16
+  horizon: 32
   model:
     _target_: diffusion_policy.model.diffusion.conditional_unet1d.ConditionalUnet1D
     cond_predict_scale: true
@@ -67,13 +67,13 @@ policy:
     - 256
     - 512
     - 1024
-    global_cond_dim: null
-    input_dim: 284
+    global_cond_dim: 1012
+    input_dim: 31
     kernel_size: 5
     local_cond_dim: null
     n_groups: 8
   n_action_steps: 8
-  n_obs_steps: 2
+  n_obs_steps: 4
   noise_scheduler:
     _target_: diffusers.schedulers.scheduling_ddpm.DDPMScheduler
     beta_end: 0.02
@@ -85,7 +85,7 @@ policy:
     variance_type: fixed_small
   num_inference_steps: 100
   oa_step_convention: true
-  obs_as_global_cond: false
+  obs_as_global_cond: true
   obs_as_local_cond: false
   obs_dim: 253
   pred_action_steps_only: false
@@ -94,15 +94,16 @@ task:
   action_dim: 31
   dataset:
     _target_: diffusion_policy.dataset.pusht_dataset.PushTLowdimDataset
-    horizon: 16
+    horizon: 32
     max_train_episodes: 90
     pad_after: 7
     pad_before: 1
     seed: 42
     val_ratio: 0.02
-    zarr_path: data/ourds/recorded_data17-57-50.zarr
+    zarr_path: ../recorded_data20-40-59.zarr
   env_runner:
     _target_: diffusion_policy.env_runner.pusht_keypoints_runner.PushTKeypointsRunner
+    # _target_: diffusion_policy.env_runner.diffsionrobot_lowdim_isaac_runner.IsaacHumanoidRunner
     agent_keypoints: false
     fps: 10
     keypoint_visible_rate: 1.0
@@ -111,7 +112,7 @@ task:
     n_action_steps: 8
     n_envs: null
     n_latency_steps: 0
-    n_obs_steps: 2
+    n_obs_steps: 4
     n_test: 50
     n_test_vis: 4
     n_train: 6
@@ -129,10 +130,10 @@ training:
   device: cuda:0
   gradient_accumulate_every: 1
   lr_scheduler: cosine
-  lr_warmup_steps: 500
+  lr_warmup_steps: 3000
   max_train_steps: null
   max_val_steps: null
-  num_epochs: 5000
+  num_epochs: 2000
   resume: true
   rollout_every: 50
   sample_every: 5
@@ -141,7 +142,7 @@ training:
   use_ema: true
   val_every: 1
 val_dataloader:
-  batch_size: 256
+  batch_size: 512
   num_workers: 1
   persistent_workers: false
   pin_memory: true
