@@ -259,7 +259,7 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                         step_log['train_action_mse_error'] = mse.item()
                         
                         for i in range(31):
-                            step_log['joint_{}'.format(i)] = torch.mean(torch.abs(pred_action[:,i] - gt_action[:,i]))
+                            step_log['joint_{}'.format(i)] = torch.mean(torch.abs(pred_action[...,i] - gt_action[...,i]))
                         
                         # release RAM
                         del batch
