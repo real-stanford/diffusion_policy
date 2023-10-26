@@ -9,7 +9,7 @@ checkpoint:
     mode: max
     monitor_key: test_mean_score
 dataloader:
-  batch_size: 620
+  batch_size: 8192
   num_workers: 1
   persistent_workers: false
   pin_memory: true
@@ -22,7 +22,7 @@ ema:
   power: 0.75
   update_after_step: 0
 exp_name: default
-horizon: 32
+horizon: 8
 keypoint_dim: 2
 keypoint_visible_rate: 1.0
 logging:
@@ -45,20 +45,20 @@ n_obs_steps: 4
 name: train_diffusion_unet_lowdim
 obs_as_global_cond: true
 obs_as_local_cond: false
-obs_dim: 253
+obs_dim: 317
 optimizer:
   _target_: torch.optim.AdamW
   betas:
   - 0.95
   - 0.999
   eps: 1.0e-08
-  lr: 5.0e-5
+  lr: 1.0e-4
   weight_decay: 1.0e-06
 past_action_visible: false
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_lowdim_policy.DiffusionUnetLowdimPolicy
   action_dim: 31
-  horizon: 32
+  horizon: 8
   model:
     _target_: diffusion_policy.model.diffusion.conditional_unet1d.ConditionalUnet1D
     cond_predict_scale: true
@@ -67,7 +67,7 @@ policy:
     - 256
     - 512
     - 1024
-    global_cond_dim: 1012
+    global_cond_dim: 1268 # 1012
     input_dim: 31
     kernel_size: 5
     local_cond_dim: null
@@ -87,23 +87,23 @@ policy:
   oa_step_convention: true
   obs_as_global_cond: true
   obs_as_local_cond: false
-  obs_dim: 253
+  obs_dim: 317
   pred_action_steps_only: false
 pred_action_steps_only: false
 task:
   action_dim: 31
   dataset:
     _target_: diffusion_policy.dataset.pusht_dataset.PushTLowdimDataset
-    horizon: 32
+    horizon: 8
     max_train_episodes: 90
     pad_after: 7
     pad_before: 1
     seed: 42
     val_ratio: 0.02
-    zarr_path: ../recorded_data20-40-59.zarr
+    zarr_path: recorded_data16-50-20.zarr
   env_runner:
-    _target_: diffusion_policy.env_runner.pusht_keypoints_runner.PushTKeypointsRunner
-    # _target_: diffusion_policy.env_runner.diffsionrobot_lowdim_isaac_runner.IsaacHumanoidRunner
+    # _target_: diffusion_policy.env_runner.pusht_keypoints_runner.PushTKeypointsRunner
+    _target_: diffusion_policy.env_runner.diffsionrobot_lowdim_isaac_runner.IsaacHumanoidRunner
     agent_keypoints: false
     fps: 10
     keypoint_visible_rate: 1.0
@@ -120,9 +120,10 @@ task:
     past_action: false
     test_start_seed: 100000
     train_start_seed: 0
+    device: cpu
   keypoint_dim: 2
   name: pusht_lowdim
-  obs_dim: 253
+  obs_dim: 317
 task_name: pusht_lowdim
 training:
   checkpoint_every: 50
@@ -142,7 +143,7 @@ training:
   use_ema: true
   val_every: 1
 val_dataloader:
-  batch_size: 512
+  batch_size: 2048
   num_workers: 1
   persistent_workers: false
   pin_memory: true

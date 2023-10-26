@@ -791,7 +791,7 @@ registration.register(
 registration.register(
     id="SharedBlockPushMultimodal-v0",
     entry_point=BlockPushMultimodal,
-    kwargs=dict(shared_memory=True),
+    kwargs=dict(shared_memory=False),
     max_episode_steps=350,
 )
 registration.register(

@@ -108,6 +108,8 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
 
         # configure env runner
         env_runner: BaseLowdimRunner
+        device = cfg.training.device
+        cfg.task.env_runner['device'] = device
         env_runner = hydra.utils.instantiate(
             cfg.task.env_runner,
             output_dir=self.output_dir)
@@ -215,10 +217,10 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                 policy.eval()
 
                 # run rollout
-                # if (self.epoch % cfg.training.rollout_every) == 0:
-                #     runner_log = env_runner.run(policy)
-                #     # log all
-                #     step_log.update(runner_log)
+                if (self.epoch % cfg.training.rollout_every) == 0:
+                    runner_log = env_runner.run(policy)
+                    # log all
+                    step_log.update(runner_log)
 
                 # run validation
                 if (self.epoch % cfg.training.val_every) == 0:
@@ -257,10 +259,6 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                         mse = torch.nn.functional.mse_loss(pred_action, gt_action)
                         # log
                         step_log['train_action_mse_error'] = mse.item()
-                        
-                        for i in range(31):
-                            step_log['joint_{}'.format(i)] = torch.mean(torch.abs(pred_action[...,i] - gt_action[...,i]))
-                        
                         # release RAM
                         del batch
                         del obs_dict

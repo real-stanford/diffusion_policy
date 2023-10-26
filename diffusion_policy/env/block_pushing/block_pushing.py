@@ -1069,24 +1069,24 @@ registration.register(
 registration.register(
     id="SharedBlockInsert-v0",
     entry_point=BlockPush,
-    kwargs=dict(task=BlockTaskVariant.INSERT, shared_memory=True),
+    kwargs=dict(task=BlockTaskVariant.INSERT, shared_memory=False),
     max_episode_steps=50,
 )
 registration.register(
     id="SharedBlockPush-v0",
     entry_point=BlockPush,
-    kwargs=dict(shared_memory=True),
+    kwargs=dict(shared_memory=False),
     max_episode_steps=100,
 )
 registration.register(
     id="SharedBlockPushNormalized-v0",
     entry_point=BlockPushNormalized,
-    kwargs=dict(task=BlockTaskVariant.PUSH_NORMALIZED, shared_memory=True),
+    kwargs=dict(task=BlockTaskVariant.PUSH_NORMALIZED, shared_memory=False),
     max_episode_steps=100,
 )
 registration.register(
     id="SharedBlockReach-v0",
     entry_point=BlockPush,
-    kwargs=dict(task=BlockTaskVariant.REACH, shared_memory=True),
+    kwargs=dict(task=BlockTaskVariant.REACH, shared_memory=False),
     max_episode_steps=50,
 )
