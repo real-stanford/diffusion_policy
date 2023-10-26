@@ -215,6 +215,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                     runner_log = env_runner.run(policy)
                     # log all
                     step_log.update(runner_log)
+                    breakpoint()
 
                 # run validation
                 if (self.epoch % cfg.training.val_every) == 0:

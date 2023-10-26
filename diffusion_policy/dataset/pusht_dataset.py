@@ -24,17 +24,18 @@ class PushTLowdimDataset(BaseLowdimDataset):
             ):
         super().__init__()
         self.replay_buffer = ReplayBuffer.copy_from_path(
-            zarr_path, keys=[obs_key, state_key, action_key])
+            zarr_path, keys=[state_key, action_key])
 
         val_mask = get_val_mask(
             n_episodes=self.replay_buffer.n_episodes, 
             val_ratio=val_ratio,
             seed=seed)
         train_mask = ~val_mask
-        train_mask = downsample_mask(
-            mask=train_mask, 
-            max_n=max_train_episodes, 
-            seed=seed)
+        self.val_mask = val_mask
+        # train_mask = downsample_mask(
+        #     mask=train_mask, 
+        #     max_n=max_train_episodes, 
+        #     seed=seed)
 
         self.sampler = SequenceSampler(
             replay_buffer=self.replay_buffer, 
@@ -76,12 +77,13 @@ class PushTLowdimDataset(BaseLowdimDataset):
         return len(self.sampler)
 
     def _sample_to_data(self, sample):
-        keypoint = sample[self.obs_key]
+        #keypoint = sample[self.obs_key]
         state = sample[self.state_key]
-        agent_pos = state[:,:2]
-        obs = np.concatenate([
-            keypoint.reshape(keypoint.shape[0], -1), 
-            agent_pos], axis=-1)
+        agent_pos = state[:,:253]               # TODO: This might cause a bug need to check dimension
+        #obs = np.concatenate([
+        #    keypoint.reshape(keypoint.shape[0], -1), 
+        #    agent_pos], axis=-1)
+        obs = agent_pos
 
         data = {
             'obs': obs, # T, D_o
