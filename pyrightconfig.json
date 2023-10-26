@@ -1,0 +1,7 @@
+{
+    "exclude": [
+        "data/**",
+        "data_local/**",
+        "outputs/**"
+    ]
+}

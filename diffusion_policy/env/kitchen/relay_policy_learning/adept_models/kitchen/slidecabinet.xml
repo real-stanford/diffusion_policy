@@ -1,0 +1,14 @@
+<mujoco model="slide">
+    <compiler meshdir="" texturedir=""/>
+    <include file='../scenes/basic_scene.xml'/>
+    <include file="../kitchen/assets/slidecabinet_asset.xml"/>
+
+    <worldbody>
+
+        <body pos="0 0 .25">
+		    <include file="../kitchen/assets/slidecabinet_chain.xml"/>
+        </body>
+
+    </worldbody>
+
+</mujoco>

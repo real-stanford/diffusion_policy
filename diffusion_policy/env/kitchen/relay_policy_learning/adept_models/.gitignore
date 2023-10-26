@@ -1,0 +1,8 @@
+# General
+.DS_Store
+*.swp
+*.profraw
+
+# Editors
+.vscode
+.idea

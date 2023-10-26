@@ -1,0 +1,28 @@
+<mujocoinclude>
+    <body name="slide" childclass="slidecabinet">
+        <geom pos="-0.225 0 -0.18" size="0.223 0.3 0.02" type="box"/>
+        <geom pos="0.224 0 0" size="0.226 0.3 0.2" type="box"/>
+        <geom pos="-0.225 0 0.18" size="0.223 0.3 0.02" type="box"/>
+        <geom pos="-0.426 0 0" size="0.022 0.3 0.16" type="box"/>
+        <geom pos="-0.2 0.276 0.0" size="0.21 0.024 0.16" type="box"/>
+
+        <geom class="slide_collision" pos="-0.225 0 -0.18" size="0.223 0.3 0.02" type="box" mass=".2"/>
+        <geom class="slide_collision" pos="0.224 0 0" size="0.226 0.3 0.2" type="box" mass="1"/>
+        <geom class="slide_collision" pos="-0.225 0 0.18" size="0.223 0.3 0.02" type="box" mass=".2"/>
+        <geom class="slide_collision" pos="-0.426 0 0" size="0.022 0.3 0.16" type="box" mass=".2"/>
+        <geom class="slide_collision" pos="-0.2 0.276 0" size="0.2 0.024 0.16" type="box" mass=".2"/>
+        <body name="slidelink" pos="-0.225 -0.32 0">
+            <joint name="slidedoor_joint" axis="1 0 0" type="slide" range="0 .44"/>
+            <geom material="M_slide_metal" euler="1.57 0 0" pos="-0.183 -0.06 -0.114" size="0.019 0.053 0.019" type="cylinder"/>
+            <geom material="M_slide_metal" euler="1.57 0 0" pos="-0.183 -0.06 0.114" size="0.019 0.053 0.019" type="cylinder"/>
+            <geom material="M_slide_metal" pos="-0.183 -0.123 0" size="0.022 0.159" type="cylinder"/>
+            <geom pos="0 -.02 0" size="0.225 0.03 0.195" type="box"/>
+
+            <geom class="slide_collision" pos="0 -.02 0" size="0.225 0.03 0.195" type="box" mass=".2"/>
+            <geom class="slide_collision" euler="1.57 0 0" pos="-0.183 -0.06 -0.114" size="0.019 0.053 0.019" type="cylinder" mass=".02"/>
+            <geom class="slide_collision" euler="1.57 0 0" pos="-0.183 -0.06 0.114" size="0.019 0.053 0.019" type="cylinder" mass=".02"/>
+            <geom class="slide_collision" pos="-0.183 -0.123 0" size="0.022 0.159" type="cylinder" mass=".1"/>
+            <site type="sphere" name="slide_site" pos="-0.183 -0.123 0" size=".01" group="3"/>
+        </body>
+    </body>
+</mujocoinclude>

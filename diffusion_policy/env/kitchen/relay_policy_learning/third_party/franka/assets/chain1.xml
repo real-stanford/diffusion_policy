@@ -1,0 +1,61 @@
+<!-- Modified from the original source code at
+        1) https://github.com/vikashplus/franka
+    which was originally written by Vikash Kumar and licensed under the Apache License= -->
+<mujocoinclude>
+	<body name="panda1_link0" childclass="panda" >
+        <geom class="panda_viz" mesh="link0_viz"/>
+        <geom class="panda_col" mesh="link0_col"/>
+        <body name="panda1_link1" pos="0 0 0.333">
+            <joint name="panda1_joint1" range="-2.9671 2.9671" class="panda_arm"/>
+            <geom class="panda_viz" mesh="link1_viz"/>
+            <geom class="panda_col" mesh="link1_col"/>
+            <body name="panda1_link2" pos="0 0 0" quat="0.707107 -0.707107 0 0">
+                <joint name="panda1_joint2" range="-1.8326 1.8326" class="panda_arm"/>
+                <geom class="panda_viz" mesh="link2_viz"/>
+                <geom class="panda_col" mesh="link2_col"/>
+                <body name="panda1_link3" pos="0 -0.316 0" quat="0.707107 0.707107 0 0">
+                    <joint name="panda1_joint3" range="-2.9671 2.9671" class="panda_arm"/>
+                    <geom class="panda_viz" mesh="link3_viz"/>
+                    <geom class="panda_col" mesh="link3_col"/>
+                    <body name="panda1_link4" pos="0.0825 0 0" quat="0.707107 0.707107 0 0">
+                        <joint name="panda1_joint4" range="-3.1416 0" class="panda_arm"/>
+                        <geom class="panda_viz" mesh="link4_viz"/>
+                        <geom class="panda_col" mesh="link4_col"/>
+                        <body name="panda1_link5" pos="-0.0825 0.384 0" quat="0.707107 -0.707107 0 0">
+                            <joint name="panda1_joint5" range="-2.9671 2.9671" class="panda_forearm"/>
+                            <geom class="panda_viz" mesh="link5_viz"/>
+                            <geom class="panda_col" mesh="link5_col"/>
+                            <body name="panda1_link6" pos="0 0 0" euler='1.57 0 1.57'>
+                                <joint name="panda1_joint6" range="-0.0873 3.8223" class="panda_forearm" ref='1.57'/>
+                                <!-- <body name="panda1_link6" pos="0 0 0" quat="0.707107 0.707107 0 0"> -->
+                                <!-- <joint name="panda1_joint6" range="-0.0873 3.8223" class="panda_forearm"/> -->
+                                <geom class="panda_viz" mesh="link6_viz"/>
+                                <geom class="panda_col" mesh="link6_col"/>
+                                <body name="panda1_link7" pos="0.088 0 0" euler='1.57 0 0.7854'>
+                                    <joint name="panda1_joint7" range="-2.9671 2.9671" class="panda_forearm" ref='0.7854'/>
+                                    <!-- <body name="panda1_link7" pos="0.088 0 0" quat="0.707107 0.707107 0 0"> -->
+                                    <!-- <joint name="panda1_joint7" range="-2.9671 2.9671" class="panda_forearm"/> -->
+                                    <geom class="panda_viz" mesh="link7_viz"/>
+                                    <geom class="panda_col" mesh="link7_col"/>
+                                    <geom pos="0 0 0.107" quat="0.92388 0 0 -0.382683" class="panda_viz" mesh="hand_viz"/>
+                                    <geom pos="0 0 0.107" quat="0.92388 0 0 -0.382683" class="panda_col" mesh="hand_col"/>
+                                    <site name='end_effector1' pos='0 0 .210' size='0.01' euler='0 0 -0.785398'/>
+                                    <body name="panda1_leftfinger" pos="0 0 0.1654" quat="0.92388 0 0 -0.382683">
+                                        <joint name="panda1_finger_joint1"  axis="0 1 0" type="slide" range="0 0.04" class="panda_finger"/>
+                                        <geom class="panda_viz" mesh="finger_viz"/>
+                                        <geom class="panda_col" mesh="finger_col"/>
+                                    </body>
+                                    <body name="panda1_rightfinger" pos="0 0 0.1654" quat="0.92388 0 0 -0.382683">
+                                        <joint name="panda1_finger_joint2" axis="0 -1 0" type="slide" range="0 0.04" class="panda_finger"/>
+                                        <geom quat="0 0 0 1" class="panda_viz" mesh="finger_viz"/>
+                                        <geom quat="0 0 0 1" class="panda_col" mesh="finger_col"/>
+                                    </body>
+                                </body>
+                            </body>
+                        </body>
+                    </body>
+                </body>
+            </body>
+        </body>
+    </body>
+</mujocoinclude>

@@ -1,0 +1,14 @@
+<mujoco model="hinge cabinet">
+    <compiler angle="radian"/>
+    <include file='../scenes/basic_scene.xml'/>
+    <include file="../kitchen/assets/hingecabinet_asset.xml"/>
+
+    <worldbody>
+
+        <body pos="0 0 .25">
+		    <include file="../kitchen/assets/hingecabinet_chain.xml"/>
+        </body>
+
+    </worldbody>
+
+</mujoco>

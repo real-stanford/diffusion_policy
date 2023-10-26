@@ -1,0 +1,48 @@
+<mujocoinclude>
+    <body name="counters" childclass="counters">
+        <geom material="counter_blue" mesh="cabinetbase"/>
+        <geom material="counter_marble" mesh="countertop"/>
+        <geom material="counter_marble" pos="-0.855 -0.508 1.57" size="0.463 1.08 0.03" type="box"/>
+        <geom mesh="faucet" pos="0.904 -0.172 1.511"/>
+        <geom pos="0.9 0.085 1.83" size="0.035 0.05" type="cylinder"/>
+        <geom pos="0.9 0.085 1.92" size="0.025 0.08" type="capsule"/>
+        <geom euler="1.57 0 0" pos="0.9 0.2 2" size="0.025 0.11" type="capsule"/>
+        <geom pos="0.9 0.317 1.8" size="0.025 0.2" type="capsule"/>
+        <geom pos="0.9 0.317 1.67" size="0.032 0.07" type="cylinder"/>
+        <geom pos="0.947 0.318 1.68" euler="0 1.57 0" size="0.029 0.03" type="cylinder"/>
+        <geom pos="0.99 0.318 1.68" euler="0 1.57 0" size="0.035 0.013 " type="cylinder"/>
+        <geom euler="1.57 0 0" pos="0.99 0.26 1.68" size="0.01 0.03" type="capsule"/>
+        <geom euler="0 1.57 0" pos="0.909 -0.695 1.39" size="0.022 0.28" type="cylinder"/>
+        <geom euler="1.57 0 0" pos="0.71 -0.665 1.39" size="0.018 0.03" type="cylinder"/>
+        <geom euler="1.57 0 0" pos="1.108 -0.665 1.39" size="0.018 0.03" type="cylinder"/>
+        <geom euler="0 1.57 0" pos="0.909 -0.695 1.14" size="0.022 0.28" type="cylinder"/>
+        <geom euler="1.57 0 0" pos="0.71 -0.665 1.14" size="0.018 0.03" type="cylinder"/>
+        <geom euler="1.57 0 0" pos="1.108 -0.665 1.14" size="0.018 0.03" type="cylinder"/>
+
+        <geom class="counter_collision" euler="0 1.57 0" pos="0.909 -0.695 1.39" size="0.022 0.28" type="cylinder" mass=".1"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="0.71 -0.665 1.39" size="0.018 0.03" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="1.108 -0.665 1.39" size="0.018 0.03" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" euler="0 1.57 0" pos="0.909 -0.695 1.14" size="0.022 0.28" type="cylinder" mass=".1"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="0.71 -0.665 1.14" size="0.018 0.03" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="1.108 -0.665 1.14" size="0.018 0.03" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" pos="-0.86 -0.5 0.78" size="0.46 1.07 0.777" type="box" mass="5"/>
+        <geom class="counter_collision" pos="0.907 -0.045 0.71" size="0.304 0.606 0.71" type="box" mass="3"/>
+        <geom class="counter_collision" pos="-0.855 -0.508 1.57" size="0.463 1.08 0.03" type="box" mass=".5"/>
+        <geom class="counter_collision" pos="1.159 -0.045 1.57" size="0.051 0.611 0.03" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.649 -0.045 1.57" size="0.051 0.611 0.03" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.904 0.4 1.57" size="0.204 0.165 0.03" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.904 -0.617 1.57" size="0.204 0.039 0.03" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="1.158 -0.04 1.47" size="0.05 0.61 0.076" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.652 -0.04 1.47" size="0.05 0.61 0.076" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.904 0.401 1.47" size="0.204 0.166 0.076" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.904 -0.611 1.47" size="0.206 0.034 0.076" type="box" mass=".2"/>
+        <geom class="counter_collision" pos="0.9 0.085 1.83" size="0.035 0.05" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" pos="0.9 0.085 1.92" size="0.025 0.08" type="capsule" mass=".02"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="0.9 0.2 2" size="0.025 0.11" type="capsule" mass=".02"/>
+        <geom class="counter_collision" pos="0.9 0.317 1.8" size="0.025 0.2" type="capsule" mass=".02"/>
+        <geom class="counter_collision" pos="0.9 0.317 1.67" size="0.032 0.07" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" pos="0.947 0.318 1.68" euler="0 1.57 0" size="0.029 0.03" type="cylinder" mass=".02"/>
+        <geom class="counter_collision" pos="0.99 0.318 1.68" euler="0 1.57 0" size="0.035 0.013 " type="cylinder" mass=".02"/>
+        <geom class="counter_collision" euler="1.57 0 0" pos="0.99 0.26 1.68" size="0.01 0.03" type="capsule" mass=".02"/>
+    </body>
+</mujocoinclude>

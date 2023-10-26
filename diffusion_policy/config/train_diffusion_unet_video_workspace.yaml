@@ -1,0 +1,128 @@
+defaults:
+  - _self_
+  - task: lift_image_abs
+
+name: train_diffusion_unet_video
+_target_: diffusion_policy.workspace.train_diffusion_unet_video_workspace.TrainDiffusionUnetVideoWorkspace
+
+task_name: ${task.name}
+shape_meta: ${task.shape_meta}
+exp_name: "default"
+
+horizon: 16
+n_obs_steps: 4
+n_action_steps: 8
+past_action_visible: False
+keypoint_visible_rate: 1.0
+lowdim_as_global_cond: True
+
+policy:
+  _target_: diffusion_policy.policy.diffusion_unet_video_policy.DiffusionUnetVideoPolicy
+
+  shape_meta: ${shape_meta}
+  
+  noise_scheduler:
+    _target_: diffusers.schedulers.scheduling_ddpm.DDPMScheduler
+    num_train_timesteps: 100
+    beta_start: 0.0001
+    beta_end: 0.02
+    beta_schedule: squaredcos_cap_v2
+    variance_type: fixed_small # Yilun's paper uses fixed_small_log instead, but easy to cause Nan
+    clip_sample: True # required when predict_epsilon=False
+    prediction_type: epsilon # or sample
+
+  rgb_net:
+    _target_: diffusion_policy.model.obs_encoder.video_core.VideoCore
+
+    backbone:
+      _target_: diffusion_policy.model.obs_encoder.video_core.VideoResNet
+
+      norm_groups: 8
+      input_channel: 3
+      model_depth: 50 # ResNet 50 (18,34 not yet available)
+    
+    pool:
+      _target_: diffusion_policy.model.ibc.global_avgpool.GlobalAvgpool
+
+      dim: [2,3,4]
+
+  horizon: ${horizon}
+  n_action_steps: ${n_action_steps}
+  n_obs_steps: ${n_obs_steps}
+  num_inference_steps: 100
+  lowdim_as_global_cond: ${lowdim_as_global_cond}
+  diffusion_step_embed_dim: 128
+  down_dims: [512, 1024, 2048]
+  kernel_size: 5
+  n_groups: 8
+  cond_predict_scale: True
+
+  # TemporalAggregator Parameters
+  channel_mults: [1,1]
+  n_blocks_per_level: 1
+  ta_kernel_size: 3
+  ta_n_groups: 1
+
+  # scheduler.step params
+  # predict_epsilon: True
+
+ema:
+  _target_: diffusion_policy.model.diffusion.ema_model.EMAModel
+  update_after_step: 0
+  inv_gamma: 1.0
+  power: 0.75
+  min_value: 0.0
+  max_value: 0.9999
+
+dataloader:
+  batch_size: 32
+  num_workers: 1
+  shuffle: True
+  pin_memory: True
+
+optimizer:
+  _target_: torch.optim.AdamW
+  lr: 0.0001 # 1e-4
+  betas: [0.95, 0.999]
+  eps: 0.00000001 # 1e-8
+  weight_decay: 0.000001 # 1e-6
+
+training:
+  device: "cuda:0"
+  lr_scheduler: cosine
+  lr_warmup_steps: 500
+  num_epochs: 1500
+  gradient_accumulate_every: 1
+  eval_every: 5000
+  eval_first: False
+  val_every: 300
+  use_ema: False
+  tqdm_interval_sec: 1.0
+  seed: 42
+
+logging:
+  project: diffusion_policy_debug
+  resume: True
+  mode: online
+  name: ${now:%Y.%m.%d-%H.%M.%S}_${name}_${task_name}
+  tags: ["${name}", "${task_name}", "${exp_name}"]
+  id: null
+  group: null
+
+checkpoint:
+  topk:
+    monitor_key: test_score
+    mode: max
+    k: 5
+    format_str: 'epoch={epoch:03d}-test_score={test_score:.3f}.ckpt'
+  save_last_ckpt: False
+  save_last_snapshot: False
+
+hydra:
+  job:
+    override_dirname: ${name}
+  run:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+  sweep:
+    dir: data/outputs/${now:%Y.%m.%d}/${now:%H.%M.%S}_${name}_${task_name}
+    subdir: ${hydra.job.num}
