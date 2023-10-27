@@ -22,7 +22,7 @@ ema:
   power: 0.75
   update_after_step: 0
 exp_name: default
-horizon: 8
+horizon: 16
 keypoint_dim: 2
 keypoint_visible_rate: 1.0
 logging:
@@ -58,7 +58,7 @@ past_action_visible: false
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_lowdim_policy.DiffusionUnetLowdimPolicy
   action_dim: 31
-  horizon: 8
+  horizon: 16
   model:
     _target_: diffusion_policy.model.diffusion.conditional_unet1d.ConditionalUnet1D
     cond_predict_scale: true
@@ -94,7 +94,7 @@ task:
   action_dim: 31
   dataset:
     _target_: diffusion_policy.dataset.pusht_dataset.PushTLowdimDataset
-    horizon: 8
+    horizon: 16
     max_train_episodes: 90
     pad_after: 7
     pad_before: 1
@@ -136,7 +136,7 @@ training:
   max_val_steps: null
   num_epochs: 2000
   resume: true
-  rollout_every: 50
+  rollout_every: 10
   sample_every: 5
   seed: 42
   tqdm_interval_sec: 1.0

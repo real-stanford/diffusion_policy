@@ -48,6 +48,8 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         super().__init__(output_dir)
         
         args, cfg, cfg_train = torch.load('nominal_cfg.pt')
+        
+        self.save_zarr = False
 
         # cfg['args'].rl_device = device
         # cfg['args'].sim_device = device
@@ -55,9 +57,19 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         # cfg['args'].compute_device_id = int(device[-1])
         # cfg['args'].device_id = int(device[-1])
         
-        # args.rl_device = device
-        # args.sim_device = device
+        # args.rl_device = 'cpu'
+        # args.device = 'cpu'
+        # args.use_gpu_pipeline = False
+        # args.use_gpu = False
         # args.device_id = int(device[-1])
+        
+        if self.save_zarr:
+            cfg['env']['numEnvs']=1
+            args.num_envs=1
+            args.rl_device = 'cpu'
+            args.device = 'cpu'
+            args.use_gpu_pipeline = False
+            args.use_gpu = False
                 
         run.args = args
         run.cfg = cfg
@@ -98,12 +110,12 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=device)
         
         # state_history[:,:,:] = obs[:,None,:]
-        state_history[:,:,:] = torch.cat([obs, self.player._ase_latents], dim=-1) [:,None,:] # (env.num_envs, 1, env.num_states)
+        state_history[:,:,:] = torch.cat([obs.to(device), self.player._ase_latents.to(device)], dim=-1) [:,None,:] # (env.num_envs, 1, env.num_states)
         
         obs_dict = {'obs': state_history} #, 'past_action': action_history}
         single_obs_dict = {'obs': state_history[:,-1, :253].to('cuda:0')} #, 'past_action': action_history[0]}
         
-        save_zarr = False
+        save_zarr = self.save_zarr
         if save_zarr:
             import time
             zroot = zarr.open_group("recorded_data{}.zarr".format(time.strftime("%H-%M-%S", time.localtime())), "w")
@@ -178,7 +190,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             # update pbar
             pbar.update(action.shape[1])
             
-            if save_zarr and idx > 1e6:
+            if save_zarr and idx > 1e7:
                 recorded_obs = np.array(recorded_obs)
                 recorded_acs = np.array(recorded_acs)
                 recorded_latent = np.array(recorded_latent)
@@ -190,7 +202,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 zmeta["episode_ends"] = episode_ends
                 print(zroot.tree())
                 raise StopIteration
-            elif idx > 300:
+            elif not save_zarr and idx > 300:
                 break
             
         # clear out video buffer
