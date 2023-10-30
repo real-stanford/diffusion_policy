@@ -120,7 +120,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             import time
             # zroot = zarr.open_group("recorded_data{}.zarr".format(time.strftime("%H-%M-%S", time.localtime())), "w")
             
-            zroot = zarr.open_group("recorded_data_eval.zarr", "w")
+            zroot = zarr.open_group("recorded_data_eval_2.zarr", "w")
             
             zroot.create_group("data")
             zdata = zroot["data"]

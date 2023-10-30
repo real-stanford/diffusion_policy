@@ -19,6 +19,7 @@ import random
 import wandb
 import tqdm
 import shutil
+import zarr
 
 from diffusion_policy.common.pytorch_util import dict_apply, optimizer_to
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
@@ -228,11 +229,26 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                         # sample trajectory from training set, and evaluate difference
                         env_runner.run(policy)
                         
-                        dataset = hydra.utils.instantiate(cfg.task.eval_dataset)
-                        assert isinstance(dataset, BaseLowdimDataset)
-                        eval_dataloader = DataLoader(dataset, **cfg.dataloader)
+                        # dataset = hydra.utils.instantiate(cfg.task.eval_dataset)
+                        # assert isinstance(dataset, BaseLowdimDataset)
+                        # eval_dataloader = DataLoader(dataset, **cfg.dataloader)
                         
-                        for batch_idx, batch in enumerate(eval_dataloader):
+                        # for batch_idx, batch in enumerate(eval_dataloader):
+                        
+                        batch = {}
+                        with zarr.open('recorded_data_eval_2.zarr') as dataset:
+                            obs = dataset.data.state
+                            latents = dataset.data.ase_latent
+                            actions = dataset.data.action
+                            episode_indices = np.concatenate([np.array([np.arange(i, i + policy.horizon) for i in range(j*100, j*100+20)]) for j in range(12)])
+                            episode_indices = episode_indices.flatten()
+                            obs = obs[episode_indices].reshape(-1, policy.horizon, obs.shape[-1])
+                            latents = latents[episode_indices].reshape(-1, policy.horizon, latents.shape[-1])
+                            actions = actions[episode_indices].reshape(-1, policy.horizon, actions.shape[-1])
+                            
+                            batch['obs'] = np.concatenate([latents, obs], axis=-1)
+                            batch['action'] = actions
+                            batch = dict_apply(batch, torch.from_numpy)
                             batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
                             obs_dict = {'obs': batch['obs']}
                             gt_action = batch['action']
@@ -257,8 +273,7 @@ class TrainDiffusionUnetLowdimWorkspace(BaseWorkspace):
                             del pred_action
                             del mse
                         del dataset
-                        del eval_dataloader
-                        shutil.rmtree('recorded_data_eval.zarr')
+                        shutil.rmtree('recorded_data_eval_2.zarr')
 
                 # run validation
                 if (self.epoch % cfg.training.val_every) == 0:
