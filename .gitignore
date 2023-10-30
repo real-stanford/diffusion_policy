@@ -140,3 +140,5 @@ dmypy.json
 .pyre/
 
 outputs/
+
+*.zarr
