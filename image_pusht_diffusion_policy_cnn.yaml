@@ -22,7 +22,7 @@ ema:
   power: 0.75
   update_after_step: 0
 exp_name: default
-horizon: 8
+horizon: 16
 keypoint_dim: 2
 keypoint_visible_rate: 1.0
 logging:
@@ -58,7 +58,7 @@ past_action_visible: false
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_lowdim_policy.DiffusionUnetLowdimPolicy
   action_dim: 31
-  horizon: 8
+  horizon: 16
   model:
     _target_: diffusion_policy.model.diffusion.conditional_unet1d.ConditionalUnet1D
     cond_predict_scale: true
@@ -94,13 +94,23 @@ task:
   action_dim: 31
   dataset:
     _target_: diffusion_policy.dataset.pusht_dataset.PushTLowdimDataset
-    horizon: 8
+    horizon: 16
     max_train_episodes: 90
     pad_after: 7
     pad_before: 1
     seed: 42
     val_ratio: 0.02
-    zarr_path: recorded_data16-50-20.zarr
+    zarr_path: recorded_data23-57-27.zarr
+
+  eval_dataset:
+    _target_: diffusion_policy.dataset.pusht_dataset_eval.PushTLowdimDataset
+    horizon: 16
+    max_train_episodes: 90
+    pad_after: 7
+    pad_before: 1
+    seed: 42
+    val_ratio: 0.0
+    zarr_path: recorded_data_eval_2.zarr
   env_runner:
     # _target_: diffusion_policy.env_runner.pusht_keypoints_runner.PushTKeypointsRunner
     _target_: diffusion_policy.env_runner.diffsionrobot_lowdim_isaac_runner.IsaacHumanoidRunner
@@ -136,8 +146,8 @@ training:
   max_val_steps: null
   num_epochs: 2000
   resume: true
-  rollout_every: 50
-  sample_every: 5
+  rollout_every: 1
+  sample_every: 1
   seed: 42
   tqdm_interval_sec: 1.0
   use_ema: true

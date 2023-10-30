@@ -49,7 +49,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         
         args, cfg, cfg_train = torch.load('nominal_cfg.pt')
         
-        self.save_zarr = False
+        self.save_zarr = True
 
         # cfg['args'].rl_device = device
         # cfg['args'].sim_device = device
@@ -118,7 +118,9 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         save_zarr = self.save_zarr
         if save_zarr:
             import time
-            zroot = zarr.open_group("recorded_data{}.zarr".format(time.strftime("%H-%M-%S", time.localtime())), "w")
+            # zroot = zarr.open_group("recorded_data{}.zarr".format(time.strftime("%H-%M-%S", time.localtime())), "w")
+            
+            zroot = zarr.open_group("recorded_data_eval_2.zarr", "w")
             
             zroot.create_group("data")
             zdata = zroot["data"]
@@ -190,7 +192,8 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             # update pbar
             pbar.update(action.shape[1])
             
-            if save_zarr and idx > 1e7:
+            # if save_zarr and idx > 1e7:
+            if save_zarr and idx > 1200:
                 recorded_obs = np.array(recorded_obs)
                 recorded_acs = np.array(recorded_acs)
                 recorded_latent = np.array(recorded_latent)
@@ -201,7 +204,8 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 zdata["ase_latent"] = recorded_latent
                 zmeta["episode_ends"] = episode_ends
                 print(zroot.tree())
-                raise StopIteration
+                # raise StopIteration
+                break
             elif not save_zarr and idx > 300:
                 break
             
