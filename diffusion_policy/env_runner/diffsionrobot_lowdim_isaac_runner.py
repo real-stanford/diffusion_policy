@@ -49,7 +49,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         
         args, cfg, cfg_train = torch.load('nominal_cfg.pt')
         
-        self.save_zarr = False
+        self.save_zarr = True
         
         if self.save_zarr:
             cfg['env']['numEnvs']=4
@@ -105,7 +105,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         action_history = torch.zeros((env.num_envs, history, env.num_actions), dtype=torch.float32, device=device)
         
         # state_history[:,:,:] = obs[:,None,:]
-        state_history[:,:,:] = torch.cat([self.player._ase_latents.to(device), obs.to(device)], dim=-1) [:,None,:] # (env.num_envs, 1, env.num_states)
+        state_history[:,:,:] = torch.cat([self.player._ase_latents.to(device), obs.to(device)], dim=-1) [:,None,:] # (env.num_envs, 1, env.num_observations)
         
         obs_dict = {'obs': state_history[:,:-1]} #, 'past_action': action_history}
         single_obs_dict = {'obs': state_history[:,-1, -253:].to('cuda:0')} #, 'past_action': action_history[0]}
@@ -135,12 +135,15 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             recorded_acs = []
             recorded_latent = []
             
-            # recorded_obs_episode = torch.
+            recorded_obs_episode = np.zeros((env.num_envs, env.task.max_episode_length, env.num_observations))
+            recorded_acs_episode = np.zeros((env.num_envs, env.task.max_episode_length, env.num_actions))
+            recorded_latent_episode = np.zeros((env.num_envs, env.task.max_episode_length, 64))
             
             
         episode_ends = []
         action_error = []
-        idx = 0        
+        idx = 0    
+        saved_idx = 0    
         skip = 5
                 
         while not done:
@@ -165,16 +168,15 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                     print('action diff: ', torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)))
                     action_error.append(torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)).item())
                     
-                if online:
                     action = pred_action[:,history:history+6,:]
                 else:
                     action = expert_action[:,None,:]
                 
             if save_zarr:
-                recorded_obs.append(single_obs_dict['obs'].to("cpu").detach().numpy()[0, :])
-                recorded_acs.append(expert_action.to("cpu").detach().numpy()[0, :])
-                recorded_latent.append(self.player._ase_latents.to("cpu").detach().numpy()[0, :])
-
+                curr_idx = np.all(recorded_acs_episode == 0, axis=-1).argmax(axis=-1)
+                recorded_obs_episode[:,curr_idx,:] = single_obs_dict['obs'].to("cpu").detach().numpy()
+                recorded_acs_episode[:,curr_idx+1,:] = expert_action.to("cpu").detach().numpy()
+                recorded_latent_episode[:,curr_idx,:] = self.player._ase_latents.to("cpu").detach().numpy()
 
             # step env
             self.n_action_steps = action.shape[1]
@@ -188,32 +190,50 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 state_history[:,-1,:-253] = self.player._ase_latents
                 action_history[:,-1,:] = action_step
                 single_obs_dict = {'obs': state_history[:,-1,-253:].to('cuda:0')}
-                
-                if save_zarr:
-                    if done[0]:
-                        episode_ends.append(idx+1)
+            
                 idx += 1
             # reset env
             env_ids = torch.nonzero(done, as_tuple=False).squeeze(1).int()
+            # print("env_ids: ", env_ids)
             if len(env_ids) > 0:
-                # self.player.env_reset(env_ids)
+                self.player.env_reset(env_ids)
                 obs = env.reset(env_ids)
                 # state_history[env_ids,:,:] = obs_2[env_ids,None,:]
                 state_history[env_ids,:,-253:] = obs[env_ids].to(state_history.device)[:,None,:]
                 state_history[env_ids,:,:-253] = self.player._ase_latents[env_ids].to(state_history.device)[:,None,:]
                 action_history[env_ids,:,:] = 0.0
+                
+                # flush saved data
+                if save_zarr:
+                    for i in range(len(env_ids)):
+                        epi_len = np.all(recorded_acs_episode[env_ids[i]] == 0, axis=-1).argmax(axis=-1)
+                        if epi_len == 0:
+                            epi_len = recorded_acs_episode.shape[1]
+                        recorded_obs.append(recorded_obs_episode[env_ids[i]])
+                        recorded_acs.append(recorded_acs_episode[env_ids[i]])
+                        recorded_latent.append(recorded_latent_episode[env_ids[i]])
+                        recorded_obs_episode[env_ids[i]] = 0
+                        recorded_acs_episode[env_ids[i]] = 0
+                        recorded_latent_episode[env_ids[i]] = 0
+                        
+                        saved_idx += epi_len
+                        episode_ends.append(saved_idx)
+                    
             done = done.cpu().numpy()
             done = np.all(done)
             past_action = action
 
             # update pbar
-            pbar.update(action.shape[1])
+            if online:
+                pbar.update(action.shape[1])
+            else:
+                pbar.update(4)
             
             
-            if save_zarr and idx > len_to_save:
-                recorded_obs = np.array(recorded_obs)
-                recorded_acs = np.array(recorded_acs)
-                recorded_latent = np.array(recorded_latent)
+            if save_zarr and saved_idx >= len_to_save:
+                recorded_obs = np.concatenate(recorded_obs)
+                recorded_acs = np.concatenate(recorded_acs)
+                recorded_latent = np.concatenate(recorded_latent)
                 episode_ends = np.array(episode_ends)
                 
                 zdata["state"] = recorded_obs
