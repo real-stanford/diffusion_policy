@@ -167,9 +167,12 @@ class ReplayBuffer:
             if keys is None:
                 keys = src_root['data'].keys()
             data = dict()
+            print("start loading data")
             for key in keys:
+                print("loading", key)
                 arr = src_root['data'][key]
                 data[key] = arr[:]
+                print("loaded", key)
 
             root = {
                 'meta': meta,

@@ -52,7 +52,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         self.save_zarr = True
         
         if self.save_zarr:
-            cfg['env']['numEnvs']=4
+            cfg['env']['numEnvs']=16
             args.num_envs=1
             args.rl_device = 'cpu'
             args.device = 'cpu'
@@ -107,11 +107,13 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         # state_history[:,:,:] = obs[:,None,:]
         state_history[:,:,:] = torch.cat([self.player._ase_latents.to(device), obs.to(device)], dim=-1) [:,None,:] # (env.num_envs, 1, env.num_observations)
         
-        obs_dict = {'obs': state_history[:,:-1]} #, 'past_action': action_history}
+        obs_dict = {'obs': state_history[:,:]} #, 'past_action': action_history}
         single_obs_dict = {'obs': state_history[:,-1, -253:].to('cuda:0')} #, 'past_action': action_history[0]}
+        
         
         save_zarr = generate_data or (not online)
         len_to_save = 1200 if not generate_data else 1e7
+        print("length to save", len_to_save)
         if save_zarr:
             
             if generate_data:
@@ -145,38 +147,52 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
         idx = 0    
         saved_idx = 0    
         skip = 5
-                
         while not done:
             # run policy
             with torch.no_grad():
-                
                 expert_action = self.player.get_action(single_obs_dict, is_determenistic=True)
                 # if idx % skip == 4: #not save_zarr and 
                 if online:
-                    obs_dict = {'obs': state_history[:,:-1]}
+                # if idx > 10:
+                    obs_dict = {'obs': state_history[:,-4:,:]}
+                    obs_dict['obs'][:,-1,:-253] = torch.tensor([ 0.0378,  0.0338,  0.0726, -0.0593, -0.1044,  0.1489, -0.0006, -0.1080,
+                    0.2047, -0.1283,  0.0318,  0.0232, -0.3094,  0.1823,  0.0721,  0.2027,
+                    -0.0547, -0.2114, -0.0986, -0.3038, -0.0201, -0.0805,  0.1522,  0.0325,
+                    0.0959, -0.0328, -0.1267,  0.0727,  0.2151,  0.1019, -0.0809,  0.0511,
+                    -0.0550,  0.0733, -0.2014,  0.0836,  0.1340,  0.0580, -0.0762, -0.0574,
+                    0.1326, -0.0737,  0.1634,  0.0785, -0.1303,  0.0276, -0.0330,  0.1069,
+                    0.2971,  0.1978,  0.1767,  0.0819,  0.0369,  0.0803, -0.0847,  0.0224,
+                    0.1209, -0.0013, -0.1292, -0.1193,  0.0442, -0.0701, -0.1243,  0.0971]).cuda()
+                    # obs_dict['obs'][:,-1,:-253] = torch.mean(obs_dict['obs'][:,-1,:-253], dim=0)
+                    print(obs_dict['obs'][:,-1,:4])
                     action_dict = policy.predict_action(obs_dict)
                     # obs_dict_2 = {'obs': torch.cat([
-                    #     torch.from_numpy(np.array(recorded_latent)).view(1,-1,64).to('cuda:0'), 
-                    #     torch.from_numpy(np.array(recorded_obs)).view(1,-1,253).to('cuda:0')], dim=-1)[:,-history:,:]}
-                    # print(obs_dict_2['obs'][:,:,-3:], '\n state: \n', obs_dict['obs'][:,:,-3:], '\n curr: \n', single_obs_dict['obs'][:,-3:])
+                    #     torch.from_numpy(recorded_latent_episode[0:1]).to('cuda:0'), 
+                    #     torch.from_numpy(recorded_obs_episode[0:1]).to('cuda:0')], dim=-1)[:,idx-history:idx,:]}
+                    # # print(obs_dict_2['obs'][:,:,-3:], '\n state: \n', obs_dict['obs'][:,:,-3:], '\n curr: \n', single_obs_dict['obs'][:,-3:])
                     # action_dict_2 = policy.predict_action(obs_dict_2)
-                    pred_action = action_dict['action_pred']
-                    # gt_action = torch.from_numpy(np.array(recorded_acs)).view(1,-1,31).to('cuda:0')[:,-history:,:]
+                    # pred_action = action_dict_2['action_pred']
+                    # gt_action = torch.from_numpy(recorded_acs_episode[0:1]).view(1,-1,31).to('cuda:0')[:,idx-history:idx,:]
                     
                     # mse = torch.nn.functional.mse_loss(pred_action[:,:gt_action.shape[1],:], gt_action)
+                    # print("\n\n\ngt_action: ", pred_action[:,:gt_action.shape[1],:3], '\n', gt_action[:,:,:3])
                     # print("eval mse: ", mse.item(), np.sqrt(mse.item()))
-                    print('action diff: ', torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)))
-                    action_error.append(torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)).item())
+                    # print('action diff: ', torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)))
+                    # action_error.append(torch.mean(torch.sqrt((expert_action[0] - pred_action[0,history]) ** 2)).item())
                     
+                    pred_action = action_dict['action_pred']
                     action = pred_action[:,history:history+6,:]
+                    # action = expert_action[:,None,:]
                 else:
                     action = expert_action[:,None,:]
-                
             if save_zarr:
-                curr_idx = np.all(recorded_acs_episode == 0, axis=-1).argmax(axis=-1)
-                recorded_obs_episode[:,curr_idx,:] = single_obs_dict['obs'].to("cpu").detach().numpy()
-                recorded_acs_episode[:,curr_idx+1,:] = expert_action.to("cpu").detach().numpy()
-                recorded_latent_episode[:,curr_idx,:] = self.player._ase_latents.to("cpu").detach().numpy()
+                curr_idx = np.all(recorded_latent_episode == 0, axis=-1).argmax(axis=-1)
+                # curr_idx = idx
+                recorded_obs_episode[np.arange(env.num_envs),curr_idx,:] = single_obs_dict['obs'].to("cpu").detach().numpy()
+                recorded_acs_episode[np.arange(env.num_envs),curr_idx+1,:] = expert_action.to("cpu").detach().numpy()
+                recorded_latent_episode[np.arange(env.num_envs),curr_idx,:] = self.player._ase_latents.to("cpu").detach().numpy()[:,:]
+                
+            # print(self.player._ase_latents.to("cpu").detach().numpy()[0,:3])
 
             # step env
             self.n_action_steps = action.shape[1]
@@ -188,6 +204,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 action_history = torch.roll(action_history, shifts=-1, dims=1)
                 state_history[:,-1,-253:] = obs
                 state_history[:,-1,:-253] = self.player._ase_latents
+                
                 action_history[:,-1,:] = action_step
                 single_obs_dict = {'obs': state_history[:,-1,-253:].to('cuda:0')}
             
@@ -206,12 +223,13 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 # flush saved data
                 if save_zarr:
                     for i in range(len(env_ids)):
-                        epi_len = np.all(recorded_acs_episode[env_ids[i]] == 0, axis=-1).argmax(axis=-1)
+                        epi_len = np.all(recorded_obs_episode[env_ids[i]] == 0, axis=-1).argmax(axis=-1)+1
                         if epi_len == 0:
                             epi_len = recorded_acs_episode.shape[1]
-                        recorded_obs.append(recorded_obs_episode[env_ids[i]])
-                        recorded_acs.append(recorded_acs_episode[env_ids[i]])
-                        recorded_latent.append(recorded_latent_episode[env_ids[i]])
+                        recorded_obs.append(np.copy(recorded_obs_episode[env_ids[i], :epi_len]))
+                        recorded_acs.append(np.copy(recorded_acs_episode[env_ids[i], :epi_len]))
+                        recorded_latent.append(np.copy(recorded_latent_episode[env_ids[i], :epi_len]))
+                        
                         recorded_obs_episode[env_ids[i]] = 0
                         recorded_acs_episode[env_ids[i]] = 0
                         recorded_latent_episode[env_ids[i]] = 0
@@ -227,7 +245,7 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
             if online:
                 pbar.update(action.shape[1])
             else:
-                pbar.update(4)
+                pbar.update(env.num_envs)
             
             
             if save_zarr and saved_idx >= len_to_save:
@@ -244,11 +262,46 @@ class IsaacHumanoidRunner(BaseLowdimRunner):
                 if generate_data:
                     raise StopIteration
                 break
-            elif not save_zarr and idx > 300:
-                break
+            # elif not save_zarr and idx > 300:
+            #     break
             
         # clear out video buffer
         _ = env.reset()
+        
+        with torch.no_grad():
+            batch = {}
+            dataset = zarr.open("recorded_data_eval.zarr", "r")
+            # sample trajectory from training set, and evaluate difference
+            obs = dataset.data.state
+            latents = dataset.data.ase_latent
+            actions = dataset.data.action
+            episode_indices = np.concatenate([np.array([np.arange(i, i + policy.horizon) for i in range(j*100, j*100+20)]) for j in range(10)])
+            episode_indices = episode_indices.flatten()
+            obs = obs[episode_indices].reshape(-1, policy.horizon, obs.shape[-1])
+            latents = latents[episode_indices].reshape(-1, policy.horizon, latents.shape[-1])
+            actions = actions[episode_indices].reshape(-1, policy.horizon, actions.shape[-1])
+            
+            batch['obs'] = np.concatenate([latents, obs], axis=-1)
+            # batch['obs'] = obs
+            batch['action'] = actions
+            batch = dict_apply(batch, torch.from_numpy)
+            batch = dict_apply(batch, lambda x: x.to(device, non_blocking=True))
+            obs_dict = {'obs': batch['obs']}
+            gt_action = batch['action']
+            
+            result = policy.predict_action(obs_dict)
+
+            pred_action = result['action_pred']
+            mse = torch.nn.functional.mse_loss(pred_action, gt_action)
+            
+            print("eval mse: ", mse.item(), np.sqrt(mse.item()))
+            # release RAM
+            del batch
+            del obs_dict
+            del gt_action
+            del result
+            del pred_action
+            del mse
 
 
         # log
