@@ -44,7 +44,13 @@ def main(checkpoint, output_dir, device):
     cfg.task.env_runner['device'] = device
     
     cls = hydra.utils.get_class(cfg._target_)
-    workspace = cls(cfg, output_dir=output_dir)
+    
+    # use CNN
+    # workspace = cls(cfg, output_dir=output_dir)
+    
+    # use TF
+    workspace = cls(cfg)
+    
     workspace: BaseWorkspace
     workspace.load_payload(payload, exclude_keys=None, include_keys=None)
     
