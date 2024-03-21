@@ -28,6 +28,7 @@ class PushTImageDataset(BaseImageDataset):
             n_episodes=self.replay_buffer.n_episodes, 
             val_ratio=val_ratio,
             seed=seed)
+        self.val_mask = val_mask;
         train_mask = ~val_mask
         train_mask = downsample_mask(
             mask=train_mask, 
@@ -52,9 +53,9 @@ class PushTImageDataset(BaseImageDataset):
             sequence_length=self.horizon,
             pad_before=self.pad_before, 
             pad_after=self.pad_after,
-            episode_mask=~self.train_mask
+            episode_mask=self.val_mask
             )
-        val_set.train_mask = ~self.train_mask
+        val_set.train_mask = self.val_mask
         return val_set
 
     def get_normalizer(self, mode='limits', **kwargs):
