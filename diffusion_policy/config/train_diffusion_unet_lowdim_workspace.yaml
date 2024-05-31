@@ -103,7 +103,7 @@ training:
   # in epochs
   rollout_every: 50
   checkpoint_every: 50
-  val_every: 1
+  val_every: 100
   sample_every: 5
   # steps per epoch
   max_train_steps: null

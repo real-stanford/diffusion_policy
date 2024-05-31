@@ -2,8 +2,8 @@ defaults:
   - _self_
   - task: pusht_lowdim
 
-name: train_robomimic_lowdim
-_target_: diffusion_policy.workspace.train_robomimic_lowdim_workspace.TrainRobomimicLowdimWorkspace
+name: train_leto_lowdim
+_target_: diffusion_policy.workspace.train_leto_lowdim_workspace.TrainLetoLowdimWorkspace
 
 obs_dim: ${task.obs_dim}
 action_dim: ${task.action_dim}
@@ -18,8 +18,11 @@ n_latency_steps: 0
 past_action_visible: False
 keypoint_visible_rate: 1.0
 
+pred_steps: 5
+samp_steps: 10
+smooth_weight: 1
 policy:
-  _target_: diffusion_policy.policy.robomimic_lowdim_policy.RobomimicLowdimPolicy
+  _target_: diffusion_policy.policy.leto_lowdim_policy.LetoLowdimPolicy
   action_dim: ${action_dim}
   obs_dim: ${obs_dim}
   algo_name: bc_rnn
@@ -27,7 +30,7 @@ policy:
   # oc.select resolver: key, default
   task_name: ${oc.select:task.task_name,lift}
   dataset_type: ${oc.select:task.dataset_type,ph}
-
+  
 dataloader:
   batch_size: 256
   num_workers: 1
@@ -61,7 +64,7 @@ training:
   tqdm_interval_sec: 1.0
 
 logging:
-  project: diffusion_policy_debug
+  project: leto_policy_debug
   resume: True
   mode: online
   name: ${now:%Y.%m.%d-%H.%M.%S}_${name}_${task_name}
