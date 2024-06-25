@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "diffusion_policy"
+version = "0.1.0"
+description = "Your project description"
+authors = ["Your Name <your.email@example.com>"]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.10, <3.11"
+numpy = "*"
+numba = "*"
+scipy = "*"
+opencv-python-headless = "*"
+cffi = "*"
+ipykernel = "*"
+matplotlib = "*"
+zarr = "*"
+numcodecs = "*"
+h5py = "*"
+hydra-core = "*"
+einops = "*"
+tqdm = "*"
+dill = "*"
+scikit-video = "*"
+scikit-image = "*"
+gym = "*"
+pymunk = "*"
+wandb = "*"
+threadpoolctl = "*"
+shapely = "*"
+cython = "*"
+imageio = "*"
+imageio-ffmpeg = "*"
+termcolor = "*"
+tensorboard = "*"
+tensorboardx = "*"
+psutil = "*"
+click = "*"
+boto3 = "*"
+accelerate = "*"
+datasets = "*"
+diffusers = "*"
+av = "*"
+cmake = "*"
+# llvm-openmp = "*"
+imagecodecs = "*"
+ray = {version = "*", extras = ["default", "tune"]}
+torch = "1.12.1"
+torchvision = "*"
+# pytorch3d = "*"
+pytorchvideo = "*"
+[tool.setuptools]
+packages = { find = { where = ["src"] } }
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
