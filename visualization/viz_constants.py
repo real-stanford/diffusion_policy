@@ -1,0 +1,1 @@
+VIZ_DIR = "rice_scoop_teleop_org_repo"

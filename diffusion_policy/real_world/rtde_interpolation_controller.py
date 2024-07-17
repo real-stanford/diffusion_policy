@@ -29,8 +29,8 @@ class RTDEInterpolationController(mp.Process):
     def __init__(self,
             shm_manager: SharedMemoryManager, 
             robot_ip, 
-            frequency=125, 
-            lookahead_time=0.1, 
+            frequency=500, 
+            lookahead_time=0.2, 
             gain=300,
             max_pos_speed=0.25, # 5% of max speed
             max_rot_speed=0.16, # 5% of max speed
