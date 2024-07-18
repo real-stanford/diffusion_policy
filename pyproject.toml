@@ -45,7 +45,7 @@ cmake = "*"
 # llvm-openmp = "*"
 imagecodecs = "*"
 ray = {version = "*", extras = ["default", "tune"]}
-torch = "1.12.1"
+torch = "^2.3"
 torchvision = "*"
 # pytorch3d = "*"
 pytorchvideo = "*"
