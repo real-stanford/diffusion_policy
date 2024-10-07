@@ -50,7 +50,7 @@ policy:
     random_crop: True
     use_group_norm: True
     share_rgb_model: False
-    imagenet_norm: True
+    imagenet_norm: False
 
   horizon: ${horizon}
   n_action_steps: ${eval:'${n_action_steps}+${n_latency_steps}'}
@@ -104,7 +104,7 @@ training:
   # optimization
   lr_scheduler: cosine
   lr_warmup_steps: 500
-  num_epochs: 300
+  num_epochs: 2000
   gradient_accumulate_every: 1
   # EMA destroys performance when used with BatchNorm
   # replace BatchNorm with GroupNorm.
@@ -135,7 +135,7 @@ checkpoint:
   topk:
     monitor_key: train_loss
     mode: min
-    k: 5
+    k: 20
     format_str: 'epoch={epoch:04d}-train_loss={train_loss:.3f}.ckpt'
   save_last_ckpt: True
   save_last_snapshot: False

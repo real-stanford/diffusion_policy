@@ -18,9 +18,9 @@ class Actor(ModuleAttrMixin):
     def __init__(self, encoder_dim =256, num_heads = 8, action_dim =6, use_eef_encoder = True):
         super().__init__()
 
-        self.force_torque_encoder = ForceTorqueEncoder(ft_seq_len=10).to(self.device)
+        self.force_torque_encoder = ForceTorqueEncoder(ft_seq_len=10)
         if use_eef_encoder:
-            self.end_effector_encoder = EndEffectorEncoder().to(self.device)
+            self.end_effector_encoder = EndEffectorEncoder()
         else:
             self.end_effector_encoder = nn.Linear(6, encoder_dim)
 
@@ -31,7 +31,7 @@ class Actor(ModuleAttrMixin):
         
         self.use_mha = True
 
-        self.modalities = ['force_torque', 'end_effector']  
+        self.modalities = ['force_torque', 'end_effector',"cf0" ]  
 
         self.embed_dim = self.layernorm_embed_shape * len(self.modalities)
 
@@ -53,7 +53,7 @@ class Actor(ModuleAttrMixin):
         )
         self.aux_mlp = torch.nn.Linear(self.layernorm_embed_shape, 6)
 
-    def forward(self, ft_data,end_effector):
+    def forward(self, ft_data,end_effector, cf0= None,cf1=None,cf2=None,cf3=None ):
         """
         Args:
         
@@ -71,6 +71,20 @@ class Actor(ModuleAttrMixin):
         end_effector = self.end_effector_encoder(end_effector)
         end_effector = end_effector.view(-1, self.layernorm_embed_shape)
         embeds.append(end_effector)
+
+        if cf0 is not None:
+            cf0 = cf0.view(-1, self.layernorm_embed_shape)
+            embeds.append(cf0)
+        if cf1 is not None:
+            cf1 = cf1.view(-1, self.layernorm_embed_shape)
+            embeds.append(cf1)
+        if cf2 is not None:
+            cf2 = cf2.view(-1, self.layernorm_embed_shape)
+            embeds.append(cf2)
+        if cf3 is not None:
+            cf3 = cf3.view(-1, self.layernorm_embed_shape)
+            embeds.append(cf3)
+        
 
     
 

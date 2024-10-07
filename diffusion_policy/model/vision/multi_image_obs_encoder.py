@@ -134,6 +134,7 @@ class MultiImageObsEncoder(ModuleAttrMixin):
     def forward(self, obs_dict):
         batch_size = None
         features = list()
+        cf0,cf1,cf2,cf3 = None, None, None, None
         # process rgb input
         if self.share_rgb_model:
             # pass all rgb obs to rgb model
@@ -169,34 +170,28 @@ class MultiImageObsEncoder(ModuleAttrMixin):
                 assert img.shape[1:] == self.key_shape_map[key]
                 img = self.key_transform_map[key](img)
                 feature = self.key_model_map[key](img)
-                # import pdb; pdb.set_trace()
-                # print("the feature shape is: ", feature.shape)
-                features.append(feature)
-        
-        # process lowdim input
-        # for key in self.low_dim_keys:
-        #     print("working 1")
-        #     data = obs_dict[key]
-        #     if batch_size is None:
-        #         batch_size = data.shape[0]
-        #     else:
-        #         assert batch_size == data.shape[0]
-        #     # assert data.shape[1:] == self.key_shape_map[key]
- 
-        #     if key == "ft_data":
-                
-        #         data = self.force_torque_encoder(data)
-        #     else:
-        #         # data = data
-        #         data = self.end_effector_encoder(data)
+                feature = nn.Linear(512,256).to(self.device) (feature)
 
-        #     features.append(data)
+                if key =="camera_0":
+                    cf0 = feature.to(self.device)
+                if key =="camera_1":
+                    cf1 = feature.to(self.device)
+                if key =="camera_2":
+                    cf2 = feature.to(self.device)
+                if key =="camera_3":
+                    cf3 = feature.to(self.device)
+
+                # features.append(feature)
+        
+       
  
  
         if len(self.low_dim_keys) > 0:
             ft_data = obs_dict['ft_data']
             end_effector = obs_dict['replica_eef_pose']
-            action_logits,xyzrpy, weights = self.mha(ft_data, end_effector)
+
+
+            action_logits,xyzrpy, weights = self.mha(ft_data, end_effector,cf0,cf1,cf2,cf3 )
             # print("the action logits are: ", action_logits.shape)
             # print("the weights are: ", weights.shape)
  
