@@ -31,7 +31,7 @@ class Actor(ModuleAttrMixin):
         
         self.use_mha = True
 
-        self.modalities = ['force_torque', 'end_effector',"cf0" ]  
+        self.modalities = ['force_torque',"cf0" ]  
 
         self.embed_dim = self.layernorm_embed_shape * len(self.modalities)
 
@@ -53,7 +53,7 @@ class Actor(ModuleAttrMixin):
         )
         self.aux_mlp = torch.nn.Linear(self.layernorm_embed_shape, 6)
 
-    def forward(self, ft_data,end_effector, cf0= None,cf1=None,cf2=None,cf3=None ):
+    def forward(self, ft_data, cf0= None,cf1=None,cf2=None,cf3=None ):
         """
         Args:
         
@@ -68,9 +68,9 @@ class Actor(ModuleAttrMixin):
         ft_data = ft_data.view(-1, self.layernorm_embed_shape)
         embeds.append(ft_data)
 
-        end_effector = self.end_effector_encoder(end_effector)
-        end_effector = end_effector.view(-1, self.layernorm_embed_shape)
-        embeds.append(end_effector)
+        # end_effector = self.end_effector_encoder(end_effector)
+        # end_effector = end_effector.view(-1, self.layernorm_embed_shape)
+        # embeds.append(end_effector)
 
         if cf0 is not None:
             cf0 = cf0.view(-1, self.layernorm_embed_shape)

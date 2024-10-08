@@ -188,14 +188,23 @@ class MultiImageObsEncoder(ModuleAttrMixin):
  
         if len(self.low_dim_keys) > 0:
             ft_data = obs_dict['ft_data']
-            end_effector = obs_dict['replica_eef_pose']
+            # end_effector = obs_dict['replica_eef_pose']
 
 
-            action_logits,xyzrpy, weights = self.mha(ft_data, end_effector,cf0,cf1,cf2,cf3 )
+            action_logits,xyzrpy, weights = self.mha(ft_data,cf0,cf1,cf2,cf3 )
             # print("the action logits are: ", action_logits.shape)
             # print("the weights are: ", weights.shape)
  
             features.append(action_logits)
+
+        # if obs_dict.get('replica_eef_pose') is not None:
+        #     data = obs_dict["replica_eef_pose"]
+        #     if batch_size is None:
+        #         batch_size = data.shape[0]
+        #     else:
+        #         assert batch_size == data.shape[0]
+        #     assert data.shape[1:] == self.key_shape_map["replica_eef_pose"]
+        #     features.append(data)
         
         # concatenate all features
         result = torch.cat(features, dim=-1)
