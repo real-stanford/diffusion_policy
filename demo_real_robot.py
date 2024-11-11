@@ -148,6 +148,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                     target_pose[3:])).as_rotvec()
 
                 # execute teleop command
+                # TODO：cmdのところ確認
                 env.exec_actions(
                     actions=[target_pose], 
                     timestamps=[t_command_target-time.monotonic()+time.time()],

@@ -6,6 +6,8 @@ from multiprocessing.managers import SharedMemoryManager
 import scipy.interpolate as si
 import scipy.spatial.transform as st
 import numpy as np
+from pymycobot import ElephantRobot
+
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
 from diffusion_policy.shared_memory.shared_memory_queue import (
@@ -17,7 +19,6 @@ class Command(enum.Enum):
     STOP = 0
     SERVOL = 1
     SCHEDULE_WAYPOINT = 2
-
 
 class RTDEInterpolationController(mp.Process):
     """
@@ -109,20 +110,13 @@ class RTDEInterpolationController(mp.Process):
         # build ring buffer
         if receive_keys is None:
             receive_keys = [
-                'ActualTCPPose',
-                'ActualTCPSpeed',
-                'ActualQ',
-                'ActualQd',
-
                 'TargetTCPPose',
-                'TargetTCPSpeed',
-                'TargetQ',
-                'TargetQd'
             ]
-        rtde_r = RTDEReceiveInterface(hostname=robot_ip)
+        elephant_client = ElephantRobot(robot_ip, 5001)
         example = dict()
+        # TODO:あってるか見る
         for key in receive_keys:
-            example[key] = np.array(getattr(rtde_r, 'get'+key)())
+            example[key] = np.array(ElephantRobot.get_angles())
         example['robot_receive_timestamp'] = time.time()
         ring_buffer = SharedMemoryRingBuffer.create_from_examples(
             shm_manager=shm_manager,
@@ -214,38 +208,41 @@ class RTDEInterpolationController(mp.Process):
     # ========= main loop in process ============
     def run(self):
         # enable soft real-time
-        if self.soft_real_time:
-            os.sched_setscheduler(
-                0, os.SCHED_RR, os.sched_param(20))
+        # if self.soft_real_time:
+        #     os.sched_setscheduler(
+        #         0, os.SCHED_RR, os.sched_param(20))
 
         # start rtde
         robot_ip = self.robot_ip
-        rtde_c = RTDEControlInterface(hostname=robot_ip)
-        rtde_r = RTDEReceiveInterface(hostname=robot_ip)
+        elephant_client = ElephantRobot(robot_ip, 5001)
 
         try:
             if self.verbose:
                 print(f"[RTDEPositionalController] Connect to robot: {robot_ip}")
 
-            # set parameters
-            if self.tcp_offset_pose is not None:
-                rtde_c.setTcp(self.tcp_offset_pose)
-            if self.payload_mass is not None:
-                if self.payload_cog is not None:
-                    assert rtde_c.setPayload(self.payload_mass, self.payload_cog)
-                else:
-                    assert rtde_c.setPayload(self.payload_mass)
+            # # set parameters
+            # if self.tcp_offset_pose is not None:
+            #     rtde_c.setTcp(self.tcp_offset_pose)
+            # if self.payload_mass is not None:
+            #     if self.payload_cog is not None:
+            #         assert rtde_c.setPayload(self.payload_mass, self.payload_cog)
+            #     else:
+            #         assert rtde_c.setPayload(self.payload_mass)
             
             # init pose
+            # TODO:初期値変える，まあなくて良さそう
+            # self.joints_initは．6軸の角度のリスト
             if self.joints_init is not None:
-                assert rtde_c.moveJ(self.joints_init, self.joints_init_speed, 1.4)
+                elephant_client.write_angles(self.joints_init, 1000)
 
             # main loop
             dt = 1. / self.frequency
-            curr_pose = rtde_r.getActualTCPPose()
+            curr_pose = elephant_client.get_angles()
             # use monotonic time to make sure the control loop never go backward
             curr_t = time.monotonic()
             last_waypoint_time = curr_t
+            # 補完している
+            # https://docs.scipy.org/doc/scipy/reference/interpolate.html
             pose_interp = PoseTrajectoryInterpolator(
                 times=[curr_t],
                 poses=[curr_pose]
@@ -254,31 +251,36 @@ class RTDEInterpolationController(mp.Process):
             iter_idx = 0
             keep_running = True
             while keep_running:
-                # start control iteration
-                t_start = rtde_c.initPeriod()
+                # DELE
+                # t_start = rtde_c.initPeriod()
 
                 # send command to robot
-                t_now = time.monotonic()
+                # t_now = time.monotonic()
                 # diff = t_now - pose_interp.times[-1]
                 # if diff > 0:
                 #     print('extrapolate', diff)
-                pose_command = pose_interp(t_now)
-                vel = 0.5
-                acc = 0.5
-                assert rtde_c.servoL(pose_command, 
-                    vel, acc, # dummy, not used by ur5
-                    dt, 
-                    self.lookahead_time, 
-                    self.gain)
+                # pose_command = pose_interp(t_now)
+                # vel = 0.5
+                # acc = 0.5
+                # TODO：本来はここは過去の位置情報を参照して連続的に動くが，その関数がmycobotにはないため，実行終わるまでは次の指令を受け取らない
+                # assert rtde_c.servoL(pose_command, 
+                #     vel, acc, # dummy, not used by ur5
+                #     dt, 
+                #     self.lookahead_time, 
+                #     self.gain)
+                elephant_client.write_angles(curr_pose, 1000)
+
                 
                 # update robot state
                 state = dict()
+                # TODO：あってるか確認
                 for key in self.receive_keys:
-                    state[key] = np.array(getattr(rtde_r, 'get'+key)())
+                    state[key] = np.array(ElephantRobot.get_angles())
                 state['robot_receive_timestamp'] = time.time()
                 self.ring_buffer.put(state)
 
                 # fetch command from queue
+                # TODO：cmdのところ確認
                 try:
                     commands = self.input_queue.get_all()
                     n_cmd = len(commands['cmd'])
@@ -336,7 +338,9 @@ class RTDEInterpolationController(mp.Process):
                         break
 
                 # regulate frequency
-                rtde_c.waitPeriod(t_start)
+                # TODO:RTDE（リアルタイムデータ交換）によるロボット制御で、制御周期（サイクル）のタイミングを正確に保つために使われる関数
+                # 多分いらん
+                # rtde_c.waitPeriod(t_start)
 
                 # first loop successful, ready to receive command
                 if iter_idx == 0:
@@ -349,12 +353,12 @@ class RTDEInterpolationController(mp.Process):
         finally:
             # manditory cleanup
             # decelerate
-            rtde_c.servoStop()
+            # rtde_c.servoStop()
 
-            # terminate
-            rtde_c.stopScript()
-            rtde_c.disconnect()
-            rtde_r.disconnect()
+            # # terminate
+            # rtde_c.stopScript()
+            # rtde_c.disconnect()
+            # rtde_r.disconnect()
             self.ready_event.set()
 
             if self.verbose:
