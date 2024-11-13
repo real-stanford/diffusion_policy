@@ -30,8 +30,8 @@ class RTDEInterpolationController(mp.Process):
     def __init__(self,
             shm_manager: SharedMemoryManager, 
             robot_ip, 
-            frequency=125, 
-            lookahead_time=0.1, 
+            # frequency=125, 
+            # lookahead_time=0.1, 
             gain=300,
             max_pos_speed=0.25, # 5% of max speed
             max_rot_speed=0.16, # 5% of max speed
@@ -60,31 +60,31 @@ class RTDEInterpolationController(mp.Process):
 
         """
         # verify
-        assert 0 < frequency <= 500
-        assert 0.03 <= lookahead_time <= 0.2
-        assert 100 <= gain <= 2000
-        assert 0 < max_pos_speed
-        assert 0 < max_rot_speed
-        if tcp_offset_pose is not None:
-            tcp_offset_pose = np.array(tcp_offset_pose)
-            assert tcp_offset_pose.shape == (6,)
-        if payload_mass is not None:
-            assert 0 <= payload_mass <= 5
-        if payload_cog is not None:
-            payload_cog = np.array(payload_cog)
-            assert payload_cog.shape == (3,)
-            assert payload_mass is not None
-        if joints_init is not None:
-            joints_init = np.array(joints_init)
-            assert joints_init.shape == (6,)
+        # assert 0 < frequency <= 500
+        # assert 0.03 <= lookahead_time <= 0.2
+        # assert 100 <= gain <= 2000
+        # assert 0 < max_pos_speed
+        # assert 0 < max_rot_speed
+        # if tcp_offset_pose is not None:
+        #     tcp_offset_pose = np.array(tcp_offset_pose)
+        #     assert tcp_offset_pose.shape == (6,)
+        # if payload_mass is not None:
+        #     assert 0 <= payload_mass <= 5
+        # if payload_cog is not None:
+        #     payload_cog = np.array(payload_cog)
+        #     assert payload_cog.shape == (3,)
+        #     assert payload_mass is not None
+        # if joints_init is not None:
+        #     joints_init = np.array(joints_init)
+        #     assert joints_init.shape == (6,)
 
-        super().__init__(name="RTDEPositionalController")
+        # super().__init__(name="RTDEPositionalController")
         self.robot_ip = robot_ip
-        self.frequency = frequency
-        self.lookahead_time = lookahead_time
-        self.gain = gain
-        self.max_pos_speed = max_pos_speed
-        self.max_rot_speed = max_rot_speed
+        # self.frequency = frequency
+        # self.lookahead_time = lookahead_time
+        # self.gain = gain
+        # self.max_pos_speed = max_pos_speed
+        # self.max_rot_speed = max_rot_speed
         self.launch_timeout = launch_timeout
         self.tcp_offset_pose = tcp_offset_pose
         self.payload_mass = payload_mass
@@ -108,9 +108,10 @@ class RTDEInterpolationController(mp.Process):
         )
 
         # build ring buffer
+        # TODO:ここのデータ減らしているけど，大丈夫そう？
         if receive_keys is None:
             receive_keys = [
-                'TargetTCPPose',
+                'ActualTCPPose',
             ]
         elephant_client = ElephantRobot(robot_ip, 5001)
         example = dict()

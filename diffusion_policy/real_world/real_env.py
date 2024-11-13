@@ -21,12 +21,12 @@ from diffusion_policy.common.cv2_util import (
 DEFAULT_OBS_KEY_MAP = {
     # robot
     'ActualTCPPose': 'robot_eef_pose',
-    'ActualTCPSpeed': 'robot_eef_pose_vel',
-    'ActualQ': 'robot_joint',
-    'ActualQd': 'robot_joint_vel',
-    # timestamps
-    'step_idx': 'step_idx',
-    'timestamp': 'timestamp'
+    # 'ActualTCPSpeed': 'robot_eef_pose_vel',
+    # 'ActualQ': 'robot_joint',
+    # 'ActualQd': 'robot_joint_vel',
+    # # timestamps
+    # 'step_idx': 'step_idx',
+    # 'timestamp': 'timestamp'
 }
 
 class RealEnv:

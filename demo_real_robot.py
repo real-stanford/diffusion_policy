@@ -66,7 +66,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
             time.sleep(1.0)
             print('Ready!')
             state = env.get_robot_state()
-            target_pose = state['TargetTCPPose']
+            target_pose = state['ActualTCPPose']
             t_start = time.monotonic()
             iter_idx = 0
             stop = False
