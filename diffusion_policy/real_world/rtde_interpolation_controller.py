@@ -288,55 +288,56 @@ class RTDEInterpolationController(mp.Process):
                 except Empty:
                     n_cmd = 0
 
-                # execute commands
-                for i in range(n_cmd):
-                    command = dict()
-                    for key, value in commands.items():
-                        command[key] = value[i]
-                    cmd = command['cmd']
+                # # execute commands
+                # # TODO:補完の座標出してるからいらない
+                # for i in range(n_cmd):
+                #     command = dict()
+                #     for key, value in commands.items():
+                #         command[key] = value[i]
+                #     cmd = command['cmd']
 
-                    if cmd == Command.STOP.value:
-                        keep_running = False
-                        # stop immediately, ignore later commands
-                        break
-                    elif cmd == Command.SERVOL.value:
-                        # since curr_pose always lag behind curr_target_pose
-                        # if we start the next interpolation with curr_pose
-                        # the command robot receive will have discontinouity 
-                        # and cause jittery robot behavior.
-                        target_pose = command['target_pose']
-                        duration = float(command['duration'])
-                        curr_time = t_now + dt
-                        t_insert = curr_time + duration
-                        pose_interp = pose_interp.drive_to_waypoint(
-                            pose=target_pose,
-                            time=t_insert,
-                            curr_time=curr_time,
-                            max_pos_speed=self.max_pos_speed,
-                            max_rot_speed=self.max_rot_speed
-                        )
-                        last_waypoint_time = t_insert
-                        if self.verbose:
-                            print("[RTDEPositionalController] New pose target:{} duration:{}s".format(
-                                target_pose, duration))
-                    elif cmd == Command.SCHEDULE_WAYPOINT.value:
-                        target_pose = command['target_pose']
-                        target_time = float(command['target_time'])
-                        # translate global time to monotonic time
-                        target_time = time.monotonic() - time.time() + target_time
-                        curr_time = t_now + dt
-                        pose_interp = pose_interp.schedule_waypoint(
-                            pose=target_pose,
-                            time=target_time,
-                            max_pos_speed=self.max_pos_speed,
-                            max_rot_speed=self.max_rot_speed,
-                            curr_time=curr_time,
-                            last_waypoint_time=last_waypoint_time
-                        )
-                        last_waypoint_time = target_time
-                    else:
-                        keep_running = False
-                        break
+                #     if cmd == Command.STOP.value:
+                #         keep_running = False
+                #         # stop immediately, ignore later commands
+                #         break
+                #     elif cmd == Command.SERVOL.value:
+                #         # since curr_pose always lag behind curr_target_pose
+                #         # if we start the next interpolation with curr_pose
+                #         # the command robot receive will have discontinouity 
+                #         # and cause jittery robot behavior.
+                #         target_pose = command['target_pose']
+                #         duration = float(command['duration'])
+                #         curr_time = t_now + dt
+                #         t_insert = curr_time + duration
+                #         pose_interp = pose_interp.drive_to_waypoint(
+                #             pose=target_pose,
+                #             time=t_insert,
+                #             curr_time=curr_time,
+                #             max_pos_speed=self.max_pos_speed,
+                #             max_rot_speed=self.max_rot_speed
+                #         )
+                #         last_waypoint_time = t_insert
+                #         if self.verbose:
+                #             print("[RTDEPositionalController] New pose target:{} duration:{}s".format(
+                #                 target_pose, duration))
+                #     elif cmd == Command.SCHEDULE_WAYPOINT.value:
+                #         target_pose = command['target_pose']
+                #         target_time = float(command['target_time'])
+                #         # translate global time to monotonic time
+                #         target_time = time.monotonic() - time.time() + target_time
+                #         curr_time = t_now + dt
+                #         pose_interp = pose_interp.schedule_waypoint(
+                #             pose=target_pose,
+                #             time=target_time,
+                #             max_pos_speed=self.max_pos_speed,
+                #             max_rot_speed=self.max_rot_speed,
+                #             curr_time=curr_time,
+                #             last_waypoint_time=last_waypoint_time
+                #         )
+                #         last_waypoint_time = target_time
+                #     else:
+                #         keep_running = False
+                #         break
 
                 # regulate frequency
                 # TODO:RTDE（リアルタイムデータ交換）によるロボット制御で、制御周期（サイクル）のタイミングを正確に保つために使われる関数
@@ -347,9 +348,10 @@ class RTDEInterpolationController(mp.Process):
                 if iter_idx == 0:
                     self.ready_event.set()
                 iter_idx += 1
+                print("success")
 
-                if self.verbose:
-                    print(f"[RTDEPositionalController] Actual frequency {1/(time.perf_counter() - t_start)}")
+                # if self.verbose:
+                #     print(f"[RTDEPositionalController] Actual frequency {1/(time.perf_counter() - t_start)}")
 
         finally:
             # manditory cleanup

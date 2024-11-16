@@ -23,7 +23,7 @@ import cv2
 import numpy as np
 import scipy.spatial.transform as st
 from diffusion_policy.real_world.real_env import RealEnv
-from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
+from diffusion_policy.real_world.game_pad import Control
 from diffusion_policy.common.precise_sleep import precise_wait
 from diffusion_policy.real_world.keystroke_counter import (
     KeystrokeCounter, Key, KeyCode
@@ -40,7 +40,7 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
     dt = 1/frequency
     with SharedMemoryManager() as shm_manager:
         with KeystrokeCounter() as key_counter, \
-            Spacemouse(shm_manager=shm_manager) as sm, \
+            Control(shm_manager=shm_manager) as cl, \
             RealEnv(
                 output_dir=output, 
                 robot_ip=robot_ip, 
@@ -128,19 +128,20 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
 
                 precise_wait(t_sample)
                 # get teleop command
-                sm_state = sm.get_motion_state_transformed()
-                # print(sm_state)
-                dpos = sm_state[:3] * (env.max_pos_speed / frequency)
-                drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
-                
-                if not sm.is_button_pressed(0):
-                    # translation mode
-                    drot_xyz[:] = 0
-                else:
-                    dpos[:] = 0
-                if not sm.is_button_pressed(1):
-                    # 2D translation mode
-                    dpos[2] = 0    
+                cl_state = cl.get_motion_state_transformed()
+                # print(cl_state)
+                dpos = cl_state[:3] * (env.max_pos_speed / frequency)
+                drot_xyz = cl_state[3:] * (env.max_rot_speed / frequency)
+
+                # TODO:たぶんいらない  
+                # if not cl.is_button_pressed(0):
+                #     # translation mode
+                #     drot_xyz[:] = 0
+                # else:
+                #     dpos[:] = 0
+                # if not cl.is_button_pressed(1):
+                #     # 2D translation mode
+                #     dpos[2] = 0    
 
                 drot = st.Rotation.from_euler('xyz', drot_xyz)
                 target_pose[:3] += dpos
