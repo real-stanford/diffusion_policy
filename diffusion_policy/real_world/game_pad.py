@@ -6,7 +6,7 @@ import time
 # from spnav import spnav_open, spnav_poll_event, spnav_close, SpnavMotionEvent, SpnavButtonEvent
 from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemoryRingBuffer
 
-class Spacemouse(mp.Process):
+class Control(mp.Process):
     def __init__(self, 
             shm_manager, 
             get_max_k=30, 
@@ -77,6 +77,7 @@ class Spacemouse(mp.Process):
     def get_motion_state(self):
         # TODO:たぶんここの形確認する必要ある
         state = self.ring_buffer.get()
+        print('ringbuf', state)
         state = np.array(state['motion_event'][:6], 
             dtype=self.dtype) / self.max_value
         is_dead = (-self.deadzone < state) & (state < self.deadzone)
@@ -96,6 +97,7 @@ class Spacemouse(mp.Process):
 
         """
         state = self.get_motion_state()
+        # print('state', state)
         tf_state = np.zeros_like(state)
         tf_state[:3] = state[:3]
         tf_state[3:] = state[3:]
@@ -156,7 +158,7 @@ class Spacemouse(mp.Process):
 
 
         try:
-            motion_event = np.zeros((7,), dtype=np.int64)
+            motion_event = np.zeros((7,), dtype=np.float64)
             button_state = np.zeros((self.n_buttons,), dtype=bool)
             # send one message immediately so client can start reading
             self.ring_buffer.put({
@@ -171,26 +173,53 @@ class Spacemouse(mp.Process):
                 receive_timestamp = time.time()
                 if joystick.get_button(4) == 1:
                     motion_event[0] = joystick.get_axis(0)
+                    # motion_event[1] = joystick.get_axis(1)#(joystick.get_axis(1) + 3.0517578125e-05)
                     motion_event[1] = (joystick.get_axis(1) + 3.0517578125e-05)
+                    # motion_event[2] = joystick.get_axis(4)#(joystick.get_axis(4) + 3.0517578125e-05)
                     motion_event[2] = (joystick.get_axis(4) + 3.0517578125e-05)
-                    time.sleep(0.1)
-                elif joystick.get_button(5) == 1:
-                    # motion_event[:3] = event.translation
-                    motion_event[3] = joystick.get_axis(0)
-                    motion_event[4] = (joystick.get_axis(1) + 3.0517578125e-05)
-                    motion_event[5] = (joystick.get_axis(4) + 3.0517578125e-05)
-                    time.sleep(0.1)
-                    # motion_event[6] = event.period
-                # elif isinstance(event, SpnavButtonEvent):
-                #     button_state[event.bnum] = event.press
-                else:
-                    # finish integrating this round of events
-                    # before sending over
+                    # print('input', motion_event)
                     self.ring_buffer.put({
                         'motion_event': motion_event,
                         'button_state': button_state,
                         'receive_timestamp': receive_timestamp
                     })
-                    time.sleep(1/self.frequency)
+                    time.sleep(0.1)
+                    
+                elif joystick.get_button(5) == 1:
+                    # motion_event[:3] = event.translation
+                    motion_event[3] = joystick.get_axis(0)
+                    # motion_event[4] = joystick.get_axis(1)#(joystick.get_axis(1) + 3.0517578125e-05)
+                    # motion_event[5] = joystick.get_axis(4)#(joystick.get_axis(4) + 3.0517578125e-05)
+                    motion_event[4] = (joystick.get_axis(1) + 3.0517578125e-05)
+                    motion_event[5] = (joystick.get_axis(4) + 3.0517578125e-05)
+                    print('input', motion_event)
+                    self.ring_buffer.put({
+                        'motion_event': motion_event,
+                        'button_state': button_state,
+                        'receive_timestamp': receive_timestamp
+                    })
+                    time.sleep(0.1)
+                # else:
+                #     motion_event = np.zeros((7,), dtype=np.float64)
+                #     self.ring_buffer.put({
+                #         'motion_event': motion_event,
+                #         'button_state': button_state,
+                #         'receive_timestamp': receive_timestamp
+                #     })
+                    # motion_event[6] = event.period
+                # elif isinstance(event, SpnavButtonEvent):
+                #     button_state[event.bnum] = event.press
+                # else:
+                #     # finish integrating this round of events
+                #     # before sending over
+                #     print('input', motion_event)
+                #     self.ring_buffer.put({
+                #         'motion_event': motion_event,
+                #         'button_state': button_state,
+                #         'receive_timestamp': receive_timestamp
+                #     })
+                #     # print('aadejgjoewjgojwoep')
+                #     # time.sleep(1/self.frequency)
+                #     time.sleep(0.1)
         finally:
             pygame.quit()

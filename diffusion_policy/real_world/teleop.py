@@ -3,7 +3,8 @@ import time
 from pymycobot import ElephantRobot
 import threading
 
-elephant_client = ElephantRobot("172.30.21.69", 5001)
+# elephant_client = ElephantRobot("172.30.21.69", 5001)
+elephant_client = ElephantRobot("172.30.21.106", 5001)
 
 try:
     elephant_client.start_client()
@@ -85,7 +86,7 @@ while running:
                     joint6 = joint6 + move6
                     print(f"Moving to: joint4={joint4}, joint5={joint5}, joint6={joint6}")
                     elephant_client.write_angles([joint1, joint2, joint3, joint4, joint5, joint6], 1000)
-                    time.sleep(0.01)
+                    time.sleep(0.1)
 
             except Exception as e:
                 print(f"Error during movement: {e}")

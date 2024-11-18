@@ -146,7 +146,11 @@ class SharedMemoryRingBuffer:
 
         # write to shared memory
         for key, value in data.items():
+            if key=='motion_event':
+                print(key, next_idx)
+                print(value)
             arr: np.ndarray
+            print('aaaa', self.shared_arrays)
             arr = self.shared_arrays[key].get()
             if isinstance(value, np.ndarray):
                 arr[next_idx] = value

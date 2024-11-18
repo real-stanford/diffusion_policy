@@ -120,6 +120,26 @@ class RealEnv:
             thread_type='FRAME',
             thread_count=thread_per_video)
 
+        # realsense = MultiRealsense(
+        #     serial_numbers=camera_serial_numbers,
+        #     shm_manager=shm_manager,
+        #     resolution=video_capture_resolution,
+        #     capture_fps=video_capture_fps,
+        #     put_fps=video_capture_fps,
+        #     # send every frame immediately after arrival
+        #     # ignores put_fps
+        #     put_downsample=False,
+        #     record_fps=recording_fps,
+        #     enable_color=True,
+        #     enable_depth=False,
+        #     enable_infrared=False,
+        #     get_max_k=max_obs_buffer_size,
+        #     transform=transform,
+        #     vis_transform=vis_transform,
+        #     recording_transform=recording_transfrom,
+        #     video_recorder=video_recorder,
+        #     verbose=False
+        #     )
         realsense = MultiRealsense(
             serial_numbers=camera_serial_numbers,
             shm_manager=shm_manager,

@@ -8,8 +8,8 @@ import scipy.spatial.transform as st
 import numpy as np
 from pymycobot import ElephantRobot
 
-from rtde_control import RTDEControlInterface
-from rtde_receive import RTDEReceiveInterface
+# from rtde_control import RTDEControlInterface
+# from rtde_receive import RTDEReceiveInterface
 from diffusion_policy.shared_memory.shared_memory_queue import (
     SharedMemoryQueue, Empty)
 from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemoryRingBuffer
@@ -30,8 +30,8 @@ class RTDEInterpolationController(mp.Process):
     def __init__(self,
             shm_manager: SharedMemoryManager, 
             robot_ip, 
-            # frequency=125, 
-            # lookahead_time=0.1, 
+            frequency=125, 
+            lookahead_time=0.1, 
             gain=300,
             max_pos_speed=0.25, # 5% of max speed
             max_rot_speed=0.16, # 5% of max speed
@@ -78,9 +78,10 @@ class RTDEInterpolationController(mp.Process):
         #     joints_init = np.array(joints_init)
         #     assert joints_init.shape == (6,)
 
-        # super().__init__(name="RTDEPositionalController")
+        super().__init__(name="RTDEPositionalController")
+        self._closed = False
         self.robot_ip = robot_ip
-        # self.frequency = frequency
+        self.frequency = frequency
         # self.lookahead_time = lookahead_time
         # self.gain = gain
         # self.max_pos_speed = max_pos_speed
@@ -113,11 +114,18 @@ class RTDEInterpolationController(mp.Process):
             receive_keys = [
                 'ActualTCPPose',
             ]
-        elephant_client = ElephantRobot(robot_ip, 5001)
+        self.elephant_client = ElephantRobot(robot_ip, 5001)
+        # self.elephant_client = ElephantRobot("172.30.21.106", 5001)
+        try:
+            self.elephant_client.start_client()
+        except Exception as e:
+            print(f"Failed to start elephant client: {e}")
+            exit(1)
         example = dict()
         # TODO:あってるか見る
         for key in receive_keys:
-            example[key] = np.array(ElephantRobot.get_angles())
+            example[key] = np.array(self.elephant_client.get_angles())
+
         example['robot_receive_timestamp'] = time.time()
         ring_buffer = SharedMemoryRingBuffer.create_from_examples(
             shm_manager=shm_manager,
@@ -131,6 +139,7 @@ class RTDEInterpolationController(mp.Process):
         self.input_queue = input_queue
         self.ring_buffer = ring_buffer
         self.receive_keys = receive_keys
+        print('ip:', robot_ip)
     
     # ========= launch method ===========
     def start(self, wait=True):
@@ -150,6 +159,7 @@ class RTDEInterpolationController(mp.Process):
 
     def start_wait(self):
         self.ready_event.wait(self.launch_timeout)
+        # An error occurred:はここが怪しい
         assert self.is_alive()
     
     def stop_wait(self):
@@ -214,8 +224,8 @@ class RTDEInterpolationController(mp.Process):
         #         0, os.SCHED_RR, os.sched_param(20))
 
         # start rtde
-        robot_ip = self.robot_ip
-        elephant_client = ElephantRobot(robot_ip, 5001)
+        # robot_ip = self.robot_ip
+        # elephant_client = ElephantRobot(robot_ip, 5001)
 
         try:
             if self.verbose:
@@ -234,11 +244,11 @@ class RTDEInterpolationController(mp.Process):
             # TODO:初期値変える，まあなくて良さそう
             # self.joints_initは．6軸の角度のリスト
             if self.joints_init is not None:
-                elephant_client.write_angles(self.joints_init, 1000)
+                self.elephant_client.write_angles(self.joints_init, 1000)
 
             # main loop
             dt = 1. / self.frequency
-            curr_pose = elephant_client.get_angles()
+            curr_pose = self.elephant_client.get_angles()
             # use monotonic time to make sure the control loop never go backward
             curr_t = time.monotonic()
             last_waypoint_time = curr_t
@@ -269,14 +279,14 @@ class RTDEInterpolationController(mp.Process):
                 #     dt, 
                 #     self.lookahead_time, 
                 #     self.gain)
-                elephant_client.write_angles(curr_pose, 1000)
+                self.elephant_client.write_angles(curr_pose, 1000)
 
                 
                 # update robot state
                 state = dict()
                 # TODO：あってるか確認
                 for key in self.receive_keys:
-                    state[key] = np.array(ElephantRobot.get_angles())
+                    state[key] = np.array(self.elephant_client.get_angles())
                 state['robot_receive_timestamp'] = time.time()
                 self.ring_buffer.put(state)
 
@@ -348,11 +358,13 @@ class RTDEInterpolationController(mp.Process):
                 if iter_idx == 0:
                     self.ready_event.set()
                 iter_idx += 1
-                print("success")
+                # print("success")
 
                 # if self.verbose:
                 #     print(f"[RTDEPositionalController] Actual frequency {1/(time.perf_counter() - t_start)}")
 
+        except Exception as e:
+            print('error', e)
         finally:
             # manditory cleanup
             # decelerate
