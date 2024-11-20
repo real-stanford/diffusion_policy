@@ -1,6 +1,7 @@
 import torch
 import torchvision
 
+
 def get_resnet(name, weights=None, **kwargs):
     """
     name: resnet18, resnet34, resnet50
@@ -26,3 +27,8 @@ def get_r3m(name, **kwargs):
     resnet_model = r3m_model.convnet
     resnet_model = resnet_model.to('cpu')
     return resnet_model
+
+def get_dinov2(name, **kwargs):
+    from transformers import AutoModel
+    model = AutoModel.from_pretrained(name)
+    return model.to('cpu')
