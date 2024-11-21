@@ -122,6 +122,9 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                                 env.drop_episode()
                                 key_counter.clear()
                                 is_recording = False
+                        elif key_stroke == KeyCode(char='r'):
+                            cl.first_pose()
+                            print('reset.')
                             # delete
                     # print('ccc')
                     stage = key_counter[Key.space]
@@ -147,10 +150,10 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
 
                     precise_wait(t_sample)
                     # get teleop command
-                    cl_state = cl.get_motion_state_transformed()
-                    # print('control', cl_state)
-                    dpos = cl_state[:3] * (env.max_pos_speed / frequency)
-                    drot_xyz = cl_state[3:] * (env.max_rot_speed / frequency)
+                    cl_state = cl.get_motion_state()
+                    print('control', cl_state)
+                    # dpos = cl_state[:3]# * (env.max_pos_speed / frequency)
+                    # drot_xyz = cl_state[3:]# * (env.max_rot_speed / frequency)
 
                     # TODO:たぶんいらない  
                     # if not cl.is_button_pressed(0):
@@ -162,11 +165,13 @@ def main(output, robot_ip, vis_camera_idx, init_joints, frequency, command_laten
                     #     # 2D translation mode
                     #     dpos[2] = 0    
 
-                    drot = st.Rotation.from_euler('xyz', drot_xyz)
-                    target_pose[:3] += dpos
-                    target_pose[3:] = (drot * st.Rotation.from_rotvec(
-                        target_pose[3:])).as_rotvec()
-                    # print('pose', target_pose)
+                    print('pose', target_pose)
+                    target_pose[0]+=cl_state[0]
+                    target_pose[1]+=cl_state[1]
+                    target_pose[2]+=cl_state[2]
+                    target_pose[3]+=cl_state[3]
+                    target_pose[4]+=cl_state[4]
+                    target_pose[5]+=cl_state[5]
 
                     # execute teleop command
                     # TODO：cmdのところ確認

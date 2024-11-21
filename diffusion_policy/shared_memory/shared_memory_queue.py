@@ -143,17 +143,18 @@ class SharedMemoryQueue:
         write_count = self.write_counter.load()
         read_count = self.read_counter.load()
         n_data = write_count - read_count
+        # print('iiiiii', n_data)
         if n_data <= 0:
             raise Empty()
 
         out = self._get_k_impl(n_data, read_count, out=out)
         self.read_counter.add(n_data)
+        # print('efff', out)
         return out
     
     def _get_k_impl(self, k, read_count, out=None) -> Dict[str, np.ndarray]:
         if out is None:
             out = self._allocate_empty(k)
-
         curr_idx = read_count % self.buffer_size
         for key, value in self.shared_arrays.items():
             arr = value.get()

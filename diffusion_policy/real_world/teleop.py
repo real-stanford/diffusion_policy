@@ -4,13 +4,15 @@ from pymycobot import ElephantRobot
 import threading
 
 # elephant_client = ElephantRobot("172.30.21.69", 5001)
-elephant_client = ElephantRobot("172.30.21.106", 5001)
+elephant_client = ElephantRobot("192.168.0.2", 5001)
 
 try:
     elephant_client.start_client()
 except Exception as e:
     print(f"Failed to start elephant client: {e}")
     exit(1)
+
+flag='open'
 
 # Pygameの初期化
 pygame.init()
@@ -20,6 +22,8 @@ pygame.joystick.init()
 
 # 利用可能なジョイスティックの数を取得
 joystick_count = pygame.joystick.get_count()
+
+elephant_client.set_gripper_mode(1)
 
 if joystick_count == 0:
     print("コントローラーが接続されていません。")
@@ -53,6 +57,24 @@ while running:
     event= pygame.event.get()
     if elephant_client.check_running()==False:
         # 軸の状態を読み取る
+
+        # 初期値
+        if joystick.get_button(10) == 1:
+            elephant_client.write_angles([0, -90, 0, -30, -90, 20], 1000)
+        # グリッパー
+        if joystick.get_button(9) == 1:
+            if flag=='close':
+                elephant_client.set_digital_out(16, 1) # Close the gripper
+                time.sleep(1)
+                elephant_client.set_digital_out(17, 0) # IO restores low level
+                flag='open'
+            else:
+                elephant_client.set_digital_out(16, 0) #IO restores low level
+                time.sleep(1)
+                elephant_client.set_digital_out(17, 1) # Open the gripper
+                flag='close'
+
+            elephant_client.set_digital_out(17, 1) # IO restores low level
         if joystick.get_button(4) == 1:
             try:
                 # print('speed', elephant_client.check_running())
@@ -68,7 +90,7 @@ while running:
                     joint3 = joint3 + move3
                     print(f"Moving to: joint1={joint1}, joint2={joint2}, joint3={joint3}")
                     elephant_client.write_angles([joint1, joint2, joint3, joint4, joint5, joint6], 1000)
-                    time.sleep(0.1)
+                    time.sleep(1/125)
 
             except Exception as e:
                 print(f"Error during movement: {e}")
@@ -86,9 +108,41 @@ while running:
                     joint6 = joint6 + move6
                     print(f"Moving to: joint4={joint4}, joint5={joint5}, joint6={joint6}")
                     elephant_client.write_angles([joint1, joint2, joint3, joint4, joint5, joint6], 1000)
-                    time.sleep(0.1)
+                    time.sleep(1/125)
 
             except Exception as e:
                 print(f"Error during movement: {e}")
 
 pygame.quit()
+
+
+# ボタン確認
+# import pygame
+
+# # Pygameの初期化
+# pygame.init()
+# pygame.joystick.init()
+
+# # ジョイスティックの初期化
+# if pygame.joystick.get_count() > 0:
+#     joystick = pygame.joystick.Joystick(0)
+#     joystick.init()
+#     print(f"Joystick initialized: {joystick.get_name()}")
+# else:
+#     print("No joystick detected.")
+#     exit()
+
+# # メインループ
+# running = True
+# while running:
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             running = False
+        
+#         # ボタンが押された場合
+#         if event.type == pygame.JOYBUTTONDOWN:
+#             print(f"Button {event.button} pressed.")
+        
+#         # ボタンが離された場合
+#         if event.type == pygame.JOYBUTTONUP:
+#             print(f"Button {event.button} released.")

@@ -216,6 +216,11 @@ class RTDEInterpolationController(mp.Process):
     def get_all_state(self):
         return self.ring_buffer.get_all()
     
+    def first_pose(self):
+        print('aaaaAAAAAAAAAAAAAAAAA')
+        self.elephant_client.write_angles([0, -90, 0, -30, -90, 20], 500)
+        return self
+    
     # ========= main loop in process ============
     def run(self):
         # enable soft real-time
@@ -248,20 +253,34 @@ class RTDEInterpolationController(mp.Process):
 
             # main loop
             dt = 1. / self.frequency
-            curr_pose = self.elephant_client.get_angles()
+            target_pose = self.elephant_client.get_angles()
             # use monotonic time to make sure the control loop never go backward
             curr_t = time.monotonic()
             last_waypoint_time = curr_t
             # 補完している
             # https://docs.scipy.org/doc/scipy/reference/interpolate.html
-            pose_interp = PoseTrajectoryInterpolator(
-                times=[curr_t],
-                poses=[curr_pose]
-            )
+            # pose_interp = PoseTrajectoryInterpolator(
+            #     times=[curr_t],
+            #     poses=[curr_pose]
+            # )
             
             iter_idx = 0
             keep_running = True
             while keep_running:
+                try:
+                    command = dict()
+                    # print(self.input_queue.get_all())
+
+                    commands = self.input_queue.get_all()
+                    # print('KKKKKKKKKKKK', commands)
+                    for key, value in commands.items():
+                        command[key] = value
+                    target_pose = command['target_pose'][0]
+                except Exception as e:
+                    pass
+                    # print('eerrrdfgjsiepghwipetogwejogjsjgosjepogjopesj')
+                    # print('eerrr', e)
+
                 # DELE
                 # t_start = rtde_c.initPeriod()
 
@@ -279,7 +298,11 @@ class RTDEInterpolationController(mp.Process):
                 #     dt, 
                 #     self.lookahead_time, 
                 #     self.gain)
-                self.elephant_client.write_angles(curr_pose, 1000)
+                # print('aaaaaaaaaaaaaaaaaa', target_pose)
+                self.elephant_client.write_angles(target_pose, 1000)
+                time.sleep(1/125)
+                # TODO:ここをexceで保存したターゲット座標をそのまま入れる。
+                # スケジュールとかの処理を見る
 
                 
                 # update robot state
@@ -292,11 +315,11 @@ class RTDEInterpolationController(mp.Process):
 
                 # fetch command from queue
                 # TODO：cmdのところ確認
-                try:
-                    commands = self.input_queue.get_all()
-                    n_cmd = len(commands['cmd'])
-                except Empty:
-                    n_cmd = 0
+                # try:
+                #     commands = self.input_queue.get_all()
+                #     n_cmd = len(commands['cmd'])
+                # except Empty:
+                #     n_cmd = 0
 
                 # # execute commands
                 # # TODO:補完の座標出してるからいらない

@@ -54,7 +54,7 @@ class Control(mp.Process):
 
         example = {
             # 3 translation, 3 rotation, 1 period
-            'motion_event': np.zeros((7,), dtype=np.int64),
+            'motion_event': np.zeros((7,), dtype=np.float64),
             # left and right button
             'button_state': np.zeros((n_buttons,), dtype=bool),
             'receive_timestamp': time.time()
@@ -77,9 +77,9 @@ class Control(mp.Process):
     def get_motion_state(self):
         # TODO:たぶんここの形確認する必要ある
         state = self.ring_buffer.get()
-        print('ringbuf', state)
+        print('state', state)
         state = np.array(state['motion_event'][:6], 
-            dtype=self.dtype) / self.max_value
+            dtype=self.dtype) #/ self.max_value
         is_dead = (-self.deadzone < state) & (state < self.deadzone)
         state[is_dead] = 0
         return state
@@ -97,7 +97,6 @@ class Control(mp.Process):
 
         """
         state = self.get_motion_state()
-        # print('state', state)
         tf_state = np.zeros_like(state)
         tf_state[:3] = state[:3]
         tf_state[3:] = state[3:]
@@ -183,7 +182,7 @@ class Control(mp.Process):
                         'button_state': button_state,
                         'receive_timestamp': receive_timestamp
                     })
-                    time.sleep(0.1)
+                    time.sleep(1/self.frequency)
                     
                 elif joystick.get_button(5) == 1:
                     # motion_event[:3] = event.translation
@@ -192,20 +191,20 @@ class Control(mp.Process):
                     # motion_event[5] = joystick.get_axis(4)#(joystick.get_axis(4) + 3.0517578125e-05)
                     motion_event[4] = (joystick.get_axis(1) + 3.0517578125e-05)
                     motion_event[5] = (joystick.get_axis(4) + 3.0517578125e-05)
-                    print('input', motion_event)
                     self.ring_buffer.put({
                         'motion_event': motion_event,
                         'button_state': button_state,
                         'receive_timestamp': receive_timestamp
                     })
-                    time.sleep(0.1)
-                # else:
-                #     motion_event = np.zeros((7,), dtype=np.float64)
-                #     self.ring_buffer.put({
-                #         'motion_event': motion_event,
-                #         'button_state': button_state,
-                #         'receive_timestamp': receive_timestamp
-                #     })
+                    time.sleep(1/self.frequency)
+                else:
+                    motion_event = np.zeros((7,), dtype=np.float64)
+                    self.ring_buffer.put({
+                        'motion_event': motion_event,
+                        'button_state': button_state,
+                        'receive_timestamp': receive_timestamp
+                    })
+                    time.sleep(1/self.frequency)
                     # motion_event[6] = event.period
                 # elif isinstance(event, SpnavButtonEvent):
                 #     button_state[event.bnum] = event.press

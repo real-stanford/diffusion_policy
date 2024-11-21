@@ -146,11 +146,10 @@ class SharedMemoryRingBuffer:
 
         # write to shared memory
         for key, value in data.items():
-            if key=='motion_event':
-                print(key, next_idx)
-                print(value)
+            # if key=='motion_event':
+            #     print('TTTTTTTTTT', value)
             arr: np.ndarray
-            print('aaaa', self.shared_arrays)
+            # これで、共有メモリの値を書き換えられるようにしている。SharedNDArrayというやつに書いてある。
             arr = self.shared_arrays[key].get()
             if isinstance(value, np.ndarray):
                 arr[next_idx] = value
