@@ -34,7 +34,8 @@ import skvideo.io
 from omegaconf import OmegaConf
 import scipy.spatial.transform as st
 from diffusion_policy.real_world.real_env import RealEnv
-from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
+# from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
+from diffusion_policy.real_world.game_pad import Control
 from diffusion_policy.common.precise_sleep import precise_wait
 from diffusion_policy.real_world.real_inference_util import (
     get_real_obs_resolution, 
@@ -141,7 +142,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
     print("action_offset:", action_offset)
 
     with SharedMemoryManager() as shm_manager:
-        with Spacemouse(shm_manager=shm_manager) as sm, RealEnv(
+        with Control(shm_manager=shm_manager) as cl, RealEnv(
             output_dir=output, 
             robot_ip=robot_ip, 
             frequency=frequency,
@@ -185,7 +186,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 # ========= human control loop ==========
                 print("Human in control!")
                 state = env.get_robot_state()
-                target_pose = state['TargetTCPPose']
+                target_pose = state['ActualTCPPose']
                 t_start = time.monotonic()
                 iter_idx = 0
                 while True:
@@ -235,28 +236,38 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         # hand control over to the policy
                         break
 
-                    precise_wait(t_sample)
+                    # precise_wait(t_sample)
                     # get teleop command
-                    sm_state = sm.get_motion_state_transformed()
-                    # print(sm_state)
-                    dpos = sm_state[:3] * (env.max_pos_speed / frequency)
-                    drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
+                    # sm_state = sm.get_motion_state_transformed()
+                    # # print(sm_state)
+                    # dpos = sm_state[:3] * (env.max_pos_speed / frequency)
+                    # drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
   
-                    if not sm.is_button_pressed(0):
-                        # translation mode
-                        drot_xyz[:] = 0
-                    else:
-                        dpos[:] = 0
-                    if not sm.is_button_pressed(1):
-                        # 2D translation mode
-                        dpos[2] = 0    
+                    # if not sm.is_button_pressed(0):
+                    #     # translation mode
+                    #     drot_xyz[:] = 0
+                    # else:
+                    #     dpos[:] = 0
+                    # if not sm.is_button_pressed(1):
+                    #     # 2D translation mode
+                    #     dpos[2] = 0   
+                    cl_state = cl.get_motion_state()
+                    print('control', cl_state) 
 
-                    drot = st.Rotation.from_euler('xyz', drot_xyz)
-                    target_pose[:3] += dpos
-                    target_pose[3:] = (drot * st.Rotation.from_rotvec(
-                        target_pose[3:])).as_rotvec()
-                    # clip target pose
-                    target_pose[:2] = np.clip(target_pose[:2], [0.25, -0.45], [0.77, 0.40])
+                    print('pose', target_pose)
+                    target_pose[0]+=cl_state[0]
+                    target_pose[1]+=cl_state[1]
+                    target_pose[2]+=cl_state[2]
+                    target_pose[3]+=cl_state[3]
+                    target_pose[4]+=cl_state[4]
+                    target_pose[5]+=cl_state[5] 
+
+                    # drot = st.Rotation.from_euler('xyz', drot_xyz)
+                    # target_pose[:3] += dpos
+                    # target_pose[3:] = (drot * st.Rotation.from_rotvec(
+                    #     target_pose[3:])).as_rotvec()
+                    # # clip target pose
+                    # target_pose[:2] = np.clip(target_pose[:2], [0.25, -0.45], [0.77, 0.40])
 
                     # execute teleop command
                     env.exec_actions(

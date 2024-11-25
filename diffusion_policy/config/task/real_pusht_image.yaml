@@ -15,9 +15,9 @@ shape_meta: &shape_meta
     # camera_2:
     #   shape: ${task.image_shape}
     #   type: rgb
-    camera_3:
-      shape: ${task.image_shape}
-      type: rgb
+    # camera_3:
+    #   shape: ${task.image_shape}
+    #   type: rgb
     # camera_4:
     #   shape: ${task.image_shape}
     #   type: rgb

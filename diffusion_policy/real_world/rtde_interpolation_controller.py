@@ -216,10 +216,10 @@ class RTDEInterpolationController(mp.Process):
     def get_all_state(self):
         return self.ring_buffer.get_all()
     
-    def first_pose(self):
-        print('aaaaAAAAAAAAAAAAAAAAA')
-        self.elephant_client.write_angles([0, -90, 0, -30, -90, 20], 500)
-        return self
+    # def first_pose(self):
+    #     print('aaaaAAAAAAAAAAAAAAAAA')
+    #     self.elephant_client.write_angles([0, -90, 0, -30, -90, 20], 500)
+    #     return self
     
     # ========= main loop in process ============
     def run(self):
@@ -249,6 +249,7 @@ class RTDEInterpolationController(mp.Process):
             # TODO:初期値変える，まあなくて良さそう
             # self.joints_initは．6軸の角度のリスト
             if self.joints_init is not None:
+                # self.elephant_client.write_angles([0, -90, 0, -30, -90, 20], 1000)
                 self.elephant_client.write_angles(self.joints_init, 1000)
 
             # main loop

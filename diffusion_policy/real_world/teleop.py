@@ -60,7 +60,7 @@ while running:
 
         # 初期値
         if joystick.get_button(10) == 1:
-            elephant_client.write_angles([0, -90, 0, -30, -90, 20], 1000)
+            elephant_client.write_angles([0, -90, 0, -30, -90, 0], 1000)
         # グリッパー
         if joystick.get_button(9) == 1:
             if flag=='close':
