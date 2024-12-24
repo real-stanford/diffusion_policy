@@ -158,6 +158,8 @@ class ReplayBuffer:
             # numpy backend
             meta = dict()
             for key, value in src_root['meta'].items():
+                if isinstance(value, zarr.Group):
+                    continue
                 if len(value.shape) == 0:
                     meta[key] = np.array(value)
                 else:
