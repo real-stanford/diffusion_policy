@@ -33,7 +33,8 @@ import pathlib
 import skvideo.io
 from omegaconf import OmegaConf
 import scipy.spatial.transform as st
-from diffusion_policy.real_world.real_env import RealEnv
+# from diffusion_policy.real_world.real_env import RealEnv
+from diffusion_policy.real_world.real_env_with_ft import RealEnv
 from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
 from diffusion_policy.common.precise_sleep import precise_wait
 from diffusion_policy.real_world.real_inference_util import (
@@ -53,7 +54,7 @@ OmegaConf.register_new_resolver("eval", eval, replace=True)
 @click.option('--robot_ip', '-ri', required=True, help="UR5's IP address e.g. 192.168.0.204")
 @click.option('--match_dataset', '-m', default=None, help='Dataset used to overlay and adjust initial condition')
 @click.option('--match_episode', '-me', default=None, type=int, help='Match specific episode from the match dataset')
-@click.option('--vis_camera_idx', default=0, type=int, help="Which RealSense camera to visualize.")
+@click.option('--vis_camera_idx', default=1, type=int, help="Which RealSense camera to visualize.")
 @click.option('--init_joints', '-j', is_flag=True, default=False, help="Whether to initialize robot joint configuration in the beginning.")
 @click.option('--steps_per_inference', '-si', default=6, type=int, help="Action horizon for inference.")
 @click.option('--max_duration', '-md', default=60, help='Max duration for each epoch in seconds.')
@@ -78,75 +79,26 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 episode_first_frame_map[episode_idx] = frames[0]
     print(f"Loaded initial frame for {len(episode_first_frame_map)} episodes")
     
-    # load checkpoint
-    ckpt_path = input
-    payload = torch.load(open(ckpt_path, 'rb'), pickle_module=dill)
-    cfg = payload['cfg']
-    cls = hydra.utils.get_class(cfg._target_)
-    workspace = cls(cfg)
-    workspace: BaseWorkspace
-    workspace.load_payload(payload, exclude_keys=None, include_keys=None)
 
-    # hacks for method-specific setup.
-    action_offset = 0
-    delta_action = False
-    if 'diffusion' in cfg.name:
-        # diffusion model
-        policy: BaseImagePolicy
-        policy = workspace.model
-        if cfg.training.use_ema:
-            policy = workspace.ema_model
-
-        device = torch.device('cuda')
-        policy.eval().to(device)
-
-        # set inference params
-        policy.num_inference_steps = 16 # DDIM inference iterations
-        policy.n_action_steps = policy.horizon - policy.n_obs_steps + 1
-
-    elif 'robomimic' in cfg.name:
-        # BCRNN model
-        policy: BaseImagePolicy
-        policy = workspace.model
-
-        device = torch.device('cuda')
-        policy.eval().to(device)
-
-        # BCRNN always has action horizon of 1
-        steps_per_inference = 1
-        action_offset = cfg.n_latency_steps
-        delta_action = cfg.task.dataset.get('delta_action', False)
-
-    elif 'ibc' in cfg.name:
-        policy: BaseImagePolicy
-        policy = workspace.model
-        policy.pred_n_iter = 5
-        policy.pred_n_samples = 4096
-
-        device = torch.device('cuda')
-        policy.eval().to(device)
-        steps_per_inference = 1
-        action_offset = 1
-        delta_action = cfg.task.dataset.get('delta_action', False)
-    else:
-        raise RuntimeError("Unsupported policy type: ", cfg.name)
 
     # setup experiment
     dt = 1/frequency
 
-    obs_res = get_real_obs_resolution(cfg.task.shape_meta)
-    n_obs_steps = cfg.n_obs_steps
-    print("n_obs_steps: ", n_obs_steps)
-    print("steps_per_inference:", steps_per_inference)
-    print("action_offset:", action_offset)
+    # obs_res = get_real_obs_resolution(cfg.task.shape_meta)
+    # n_obs_steps = cfg.n_obs_steps
+    # print("n_obs_steps: ", n_obs_steps)
+    # print("steps_per_inference:", steps_per_inference)
+    # print("action_offset:", action_offset)
 
     with SharedMemoryManager() as shm_manager:
         with Spacemouse(shm_manager=shm_manager) as sm, RealEnv(
             output_dir=output, 
             robot_ip=robot_ip, 
             frequency=frequency,
-            n_obs_steps=n_obs_steps,
-            obs_image_resolution=obs_res,
+
+            ### change n_obs_steps same as training
+            n_obs_steps= 1,
+            obs_image_resolution= (640,480),
             obs_float32=True,
             init_joints=init_joints,
             enable_multi_cam_vis=True,
@@ -155,14 +107,42 @@ def main(input, output, robot_ip, match_dataset, match_episode,
             thread_per_video=3,
             # video recording quality, lower is better (but slower).
             video_crf=21,
-            shm_manager=shm_manager) as env:
+            shm_manager=shm_manager,
+            camera_serial_numbers= ["cam_high", "cam_low"]) as env:
             cv2.setNumThreads(1)
+
+            # load checkpoint
+            ckpt_path = input
+            payload = torch.load(open(ckpt_path, 'rb'), pickle_module=dill)
+            cfg = payload['cfg']
+            cls = hydra.utils.get_class(cfg._target_)
+            workspace = cls(cfg)
+            workspace: BaseWorkspace
+            workspace.load_payload(payload, exclude_keys=None, include_keys=None)
+
+            # hacks for method-specific setup.
+            action_offset = 0
+            delta_action = False
+
+            if 'diffusion' in cfg.name:
+                # diffusion model
+                policy: BaseImagePolicy
+                policy = workspace.model
+                if cfg.training.use_ema:
+                    policy = workspace.ema_model
+
+                device = torch.device('cuda')
+                policy.eval().to(device)
+
+                # set inference params
+                policy.num_inference_steps = 15 # DDIM inference iterations
+                policy.n_action_steps = policy.horizon - policy.n_obs_steps + 1
 
             # Should be the same as demo
             # realsense exposure
-            env.realsense.set_exposure(exposure=120, gain=0)
-            # realsense white balance
-            env.realsense.set_white_balance(white_balance=5900)
+            # env.realsense.set_exposure(exposure=150, gain=0)
+            # # realsense white balance
+            # env.realsense.set_white_balance(white_balance=3700)
 
             print("Waiting for realsense")
             time.sleep(1.0)
@@ -177,7 +157,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     lambda x: torch.from_numpy(x).unsqueeze(0).to(device))
                 result = policy.predict_action(obs_dict)
                 action = result['action'][0].detach().to('cpu').numpy()
-                assert action.shape[-1] == 2
+                assert action.shape[-1] == 6
                 del result
 
             print('Ready!')
@@ -256,11 +236,11 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                     target_pose[3:] = (drot * st.Rotation.from_rotvec(
                         target_pose[3:])).as_rotvec()
                     # clip target pose
-                    target_pose[:2] = np.clip(target_pose[:2], [0.25, -0.45], [0.77, 0.40])
+                    # target_pose[:2] = np.clip(target_pose[:2], [0.25, -0.45], [0.77, 0.40])  ## commented this to make teleop working 
 
                     # execute teleop command
                     env.exec_actions(
-                        actions=[target_pose], 
+                        actions=[target_pose],  
                         timestamps=[t_command_target-time.monotonic()+time.time()])
                     precise_wait(t_cycle_end)
                     iter_idx += 1
@@ -268,6 +248,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                 # ========== policy control loop ==============
                 try:
                     # start episode
+                    env.ft_sensor.calibrate_sensor()
                     policy.reset()
                     start_delay = 1.0
                     eval_t_start = time.time() + start_delay
@@ -286,7 +267,8 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         t_cycle_end = t_start + (iter_idx + steps_per_inference) * dt
 
                         # get obs
-                        print('get_obs')
+                        # print('get_obs')
+                        # env.ft_sensor.calibrate_sensor()
                         obs = env.get_obs()
                         obs_timestamps = obs['timestamp']
                         print(f'Obs latency {time.time() - obs_timestamps[-1]}')
@@ -315,7 +297,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                         else:
                             this_target_poses = np.zeros((len(action), len(target_pose)), dtype=np.float64)
                             this_target_poses[:] = target_pose
-                            this_target_poses[:,[0,1]] = action
+                            this_target_poses[:,[0,1,2,3,4,5]] = action
 
                         # deal with timing
                         # the same step actions are always the target for
@@ -337,8 +319,8 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             action_timestamps = action_timestamps[is_new]
 
                         # clip actions
-                        this_target_poses[:,:2] = np.clip(
-                            this_target_poses[:,:2], [0.25, -0.45], [0.77, 0.40])
+                        # this_target_poses[:,:2] = np.clip(
+                        #     this_target_poses[:,:2], [0.25, -0.45], [0.77, 0.40])
 
                         # execute actions
                         env.exec_actions(

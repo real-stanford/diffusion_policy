@@ -2,11 +2,13 @@ from typing import Optional, Callable, Dict
 import os
 import enum
 import time
-import json
+# import torch
 import numpy as np
 import pyrealsense2 as rs
+import pyzed.sl as sl
 import multiprocessing as mp
 import cv2
+import threading as th
 from threadpoolctl import threadpool_limits
 from multiprocessing.managers import SharedMemoryManager
 from diffusion_policy.common.timestamp_accumulator import get_accumulate_timestamp_idxs
@@ -14,6 +16,7 @@ from diffusion_policy.shared_memory.shared_ndarray import SharedNDArray
 from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemoryRingBuffer
 from diffusion_policy.shared_memory.shared_memory_queue import SharedMemoryQueue, Full, Empty
 from diffusion_policy.real_world.video_recorder import VideoRecorder
+from aloha_scripts.constants import *
 
 class Command(enum.Enum):
     SET_COLOR_OPTION = 0
@@ -144,6 +147,7 @@ class SingleRealsense(mp.Process):
         self.video_recorder = video_recorder
         self.verbose = verbose
         self.put_start_time = None
+        # self.image_recorder = ImageRecorder(camera_names=self.serial_number,init_node=True)
 
         # shared variables
         self.stop_event = mp.Event()
@@ -164,6 +168,7 @@ class SingleRealsense(mp.Process):
                     # only works with D400 series
                     serials.append(serial)
         serials = sorted(serials)
+        #print('serials :', serials)
         return serials
 
     # ========= context manager ===========
@@ -180,6 +185,7 @@ class SingleRealsense(mp.Process):
         super().start()
         if wait:
             self.start_wait()
+        # print("camera process is alive:", self.is_ready)
     
     def stop(self, wait=True):
         self.stop_event.set()
@@ -187,7 +193,9 @@ class SingleRealsense(mp.Process):
             self.end_wait()
 
     def start_wait(self):
+        # print("in camera start_wait")
         self.ready_event.wait()
+        # print("camera process after start_wait:", self.is_ready)
     
     def end_wait(self):
         self.join()
@@ -280,36 +288,88 @@ class SingleRealsense(mp.Process):
         # limit threads
         threadpool_limits(1)
         cv2.setNumThreads(1)
-
-        w, h = self.resolution
-        fps = self.capture_fps
-        align = rs.align(rs.stream.color)
-        # Enable the streams from all the intel realsense devices
-        rs_config = rs.config()
-        if self.enable_color:
-            rs_config.enable_stream(rs.stream.color, 
-                w, h, rs.format.bgr8, fps)
-        if self.enable_depth:
-            rs_config.enable_stream(rs.stream.depth, 
-                w, h, rs.format.z16, fps)
-        if self.enable_infrared:
-            rs_config.enable_stream(rs.stream.infrared,
-                w, h, rs.format.y8, fps)
-        
+        # print("Inside run")
+        ##
         try:
-            rs_config.enable_device(self.serial_number)
+            
+            """
+            Initialize wrist camera
+            Put: config.enable_device(WRIST_CAM_ID) if using UR rbot
+            Put: config.enable_device(WRIST_CAM_MASTER_ID) if using replica
+            """
+            if self.serial_number == 'cam_wrist':
+                # Initialize the RealSense pipeline
+                config = rs.config()
+                config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, self.capture_fps)
+                config.enable_device(WRIST_CAM_ID)
+                pipeline = rs.pipeline()
+                pipeline.start(config)
+                sensor = pipeline.get_active_profile().get_device().query_sensors()[0]
+                sensor.set_option(rs.option.enable_auto_exposure, False)
+                sensor.set_option(rs.option.exposure, 10000) ## experiment with exposure value 
 
-            # start pipeline
-            pipeline = rs.pipeline()
-            pipeline_profile = pipeline.start(rs_config)
+            """
+            Initialize Zed camera
+            """    
+            if self.serial_number == 'cam_low':
+                # print('Inside ZED init')
+                # Create a ZED camera object
+                zed = sl.Camera()
+                # Set configuration parameters
+                init_params = sl.InitParameters()
+                init_params.camera_resolution = sl.RESOLUTION.HD1080  # Change the resolution as needed
+                init_params.camera_fps = self.capture_fps  # Use the specified FPS
+                init_params.depth_mode = sl.DEPTH_MODE.NONE  # Disable depth calculation
+                init_params.camera_disable_self_calib = True
+                # Initialize the camera
+                err = zed.open(init_params)
+                # print(err)
+                if err != sl.ERROR_CODE.SUCCESS:
+                    print(f"Error initializing ZED camera: {err}")
+                    zed.close()
+                    return
+                # Create a runtime parameters object
+                runtime_params = sl.RuntimeParameters()
+
+
+            """
+            Initialize Logitec camera
+            Put: os.path.realpath("/dev/CAM_HIGH") for UR robot setup
+            Put: os.path.realpath("/dev/CAM_HIGH_MASTER") for replica robot setup
+            """ 
+            # Logitech camera setup
+            if self.serial_number == 'cam_high':
+                cam_path = os.path.realpath("/dev/CAM_HIGH")
+                cam_idx = int(cam_path.split("/dev/video")[-1])
+                cap = cv2.VideoCapture(cam_idx)
+                cap.set(cv2.CAP_PROP_EXPOSURE, 0)
+                cap.set(cv2.CAP_PROP_FPS, self.capture_fps)
+                cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+                cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+                cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+
+            if self.serial_number == 'cam_front':
+                # Initialize the RealSense pipeline
+                config = rs.config()
+                config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, self.capture_fps)
+                config.enable_device(FRONT_CAM_ID)
+                pipeline = rs.pipeline()
+                pipeline.start(config)
+                # sensor = pipeline.get_active_profile().get_device().query_sensors()[0]
+                # sensor.set_option(rs.option.enable_auto_exposure, False)
+                # sensor.set_option(rs.option.exposure, 10000)  
 
             # report global time
             # https://github.com/IntelRealSense/librealsense/pull/3909
+
+            """
+            Can omit this step to incorporate D405 data         ## abhi 3/7/24
+
             d = pipeline_profile.get_device().first_color_sensor()
             d.set_option(rs.option.global_time_enabled, 1)
-
+            """
             # setup advanced mode
-            if self.advanced_mode_config is not None:
+            """if self.advanced_mode_config is not None:
                 json_text = json.dumps(self.advanced_mode_config)
                 device = pipeline_profile.get_device()
                 advanced_mode = rs.rs400_advanced_mode(device)
@@ -326,6 +386,7 @@ class SingleRealsense(mp.Process):
                 depth_sensor = pipeline_profile.get_device().first_depth_sensor()
                 depth_scale = depth_sensor.get_depth_scale()
                 self.intrinsics_array.get()[-1] = depth_scale
+                """
             
             # one-time setup (intrinsics etc, ignore for now)
             if self.verbose:
@@ -336,25 +397,87 @@ class SingleRealsense(mp.Process):
             put_start_time = self.put_start_time
             if put_start_time is None:
                 put_start_time = time.time()
-
             iter_idx = 0
             t_start = time.time()
+
+            # frame grabbing part
+            # print("entering data aquisition")
             while not self.stop_event.is_set():
+                black_img = np.zeros((480,640,3), dtype= np.uint8)
                 # wait for frames to come in
-                frameset = pipeline.wait_for_frames()
+                if self.serial_number == 'cam_wrist':
+                    # Realsense image acquisition
+                    rs_frames = pipeline.wait_for_frames()
+                    rs_color_frame = rs_frames.get_color_frame()
+                    if rs_color_frame:
+                        frameset = np.asanyarray(rs_color_frame.get_data())
+                        # frameset = cv2.cvtColor(rs_color_image, cv2.COLOR_BGR2RGB)
+                        
+                if self.serial_number == 'cam_low':
+                    # ZED image acquisition
+                    if zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
+                        zed_image_frame = sl.Mat()
+                        zed.retrieve_image(zed_image_frame, sl.VIEW.RIGHT)
+                        frameset = cv2.resize(zed_image_frame.get_data()[:, :, :3], (640,480))
+                        """
+                        Below is cropping logic when performing domain gap
+                        comment/ uncomment these lines as needed
+                        """
+                        # black_img[y1:y2, x1:x2] = frameset[y1:y2, x1:x2]
+                        # frameset = black_img.copy()
+                        """
+                        Cropping logic ends here
+                        """
+                        # alpha_channel = frameset[:, :, 3]
+                        # print(np.min(alpha_channel), np.max(alpha_channel))
+                        # frameset = cv2.cvtColor(frameset, cv2.COLOR_BGR2RGB)
+                
+                if self.serial_number == 'cam_high':
+                    _, frameset = cap.read()
+                    frameset = cv2.resize(frameset, (640,480))
+                    """
+                    Below is cropping logic when performing domain gap
+                    comment/ uncomment these lines as needed
+                    """
+                    # black_img[y1:y2, x1:x2] = frameset[y1:y2, x1:x2]
+                    # frameset = black_img.copy()
+
+                    """
+                    Cropping logic ends here
+                    """
+                    # frameset = cv2.cvtColor(frameset, cv2.COLOR_BGR2RGB)
+
+                if self.serial_number == 'cam_front':
+                    # Realsense image acquisition
+                    rs_frames = pipeline.wait_for_frames()
+                    rs_color_frame = rs_frames.get_color_frame()
+                    if rs_color_frame:
+                        frameset = np.asanyarray(rs_color_frame.get_data())
+                        black_img[30:240, 200:550] = frameset[30:240, 200:550] 
+                        frameset = black_img.copy()
+
+                # frameset = pipeline.wait_for_frames()
                 receive_time = time.time()
                 # align frames to color
-                frameset = align.process(frameset)
+                # frameset = align.process(frameset)
 
                 # grab data
                 data = dict()
                 data['camera_receive_timestamp'] = receive_time
                 # realsense report in ms
-                data['camera_capture_timestamp'] = frameset.get_timestamp() / 1000
+                # data['camera_capture_timestamp'] = frameset[f'{self.serial_number}_timestamps']
+                data['camera_capture_timestamp'] = time.time()
+                # print("camera is:", self.serial_number)
                 if self.enable_color:
-                    color_frame = frameset.get_color_frame()
-                    data['color'] = np.asarray(color_frame.get_data())
-                    t = color_frame.get_timestamp() / 1000
+                    color_frame = frameset
+                    # cv2.imwrite(f'diffusion_policy/LHW_images/{self.serial_number}.png', color_frame)
+                    # print("camera data from ros:",color_frame.shape, type(color_frame))
+                    # data['color'] = np.asarray(color_frame.get_data())
+                    data['color'] = color_frame
+                    # t = color_frame.get_timestamp() / 1000
+                    # t = frameset[f'{self.serial_number}_timestamps']
+                    t= time.time()
+                    # print("timestamp from ros:",t, type(t))
                     data['camera_capture_timestamp'] = t
                     # print('device', time.time() - t)
                     # print(color_frame.get_frame_timestamp_domain())
@@ -364,13 +487,17 @@ class SingleRealsense(mp.Process):
                 if self.enable_infrared:
                     data['infrared'] = np.asarray(
                         frameset.get_infrared_frame().get_data())
-                
+
+
                 # apply transform
                 put_data = data
+                # print(self.transform)
                 if self.transform is not None:
                     put_data = self.transform(dict(data))
 
-                if self.put_downsample:                
+                # by default is false; value from real_env.py           # abhi 3/7/24
+                if self.put_downsample:
+                    # print("inside if stmt:", self.put_downsample)                
                     # put frequency regulation
                     local_idxs, global_idxs, put_idx \
                         = get_accumulate_timestamp_idxs(
@@ -390,13 +517,14 @@ class SingleRealsense(mp.Process):
                         # put_data['timestamp'] = put_start_time + step_idx / self.put_fps
                         put_data['timestamp'] = receive_time
                         # print(step_idx, data['timestamp'])
-                        self.ring_buffer.put(put_data, wait=False)
+                        self.ring_buffer.put(put_data, wait=True) ## observations from camera put in ring buffer
                 else:
                     step_idx = int((receive_time - put_start_time) * self.put_fps)
                     put_data['step_idx'] = step_idx
                     put_data['timestamp'] = receive_time
-                    self.ring_buffer.put(put_data, wait=False)
-
+                    self.ring_buffer.put(put_data)
+                # print("************* put data color shapes")
+                # print("put data dict:", put_data["color"].shape)
                 # signal ready
                 if iter_idx == 0:
                     self.ready_event.set()
@@ -407,7 +535,7 @@ class SingleRealsense(mp.Process):
                     vis_data = put_data
                 elif self.vis_transform is not None:
                     vis_data = self.vis_transform(dict(data))
-                self.vis_ring_buffer.put(vis_data, wait=False)
+                self.vis_ring_buffer.put(vis_data, wait=True)
                 
                 # record frame
                 rec_data = data
@@ -441,7 +569,7 @@ class SingleRealsense(mp.Process):
                     for key, value in commands.items():
                         command[key] = value[i]
                     cmd = command['cmd']
-                    if cmd == Command.SET_COLOR_OPTION.value:
+                    """if cmd == Command.SET_COLOR_OPTION.value:
                         sensor = pipeline_profile.get_device().first_color_sensor()
                         option = rs.option(command['option_enum'])
                         value = float(command['option_value'])
@@ -453,8 +581,8 @@ class SingleRealsense(mp.Process):
                         sensor = pipeline_profile.get_device().first_depth_sensor()
                         option = rs.option(command['option_enum'])
                         value = float(command['option_value'])
-                        sensor.set_option(option, value)
-                    elif cmd == Command.START_RECORDING.value:
+                        sensor.set_option(option, value)"""
+                    if cmd == Command.START_RECORDING.value:
                         video_path = str(command['video_path'])
                         start_time = command['recording_start_time']
                         if start_time < 0:
@@ -473,7 +601,13 @@ class SingleRealsense(mp.Process):
                 iter_idx += 1
         finally:
             self.video_recorder.stop()
-            rs_config.disable_all_streams()
+            if self.serial_number == 'cam_wrist':
+                pipeline.stop()
+            if self.serial_number == 'cam_low':
+                zed.close()
+            if self.serial_number == 'cam_high':
+                cap.release()
+            # rs_config.disable_all_streams()
             self.ready_event.set()
         
         if self.verbose:

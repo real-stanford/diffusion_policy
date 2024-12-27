@@ -6,8 +6,10 @@ import torchvision
 from diffusion_policy.model.vision.crop_randomizer import CropRandomizer
 from diffusion_policy.model.common.module_attr_mixin import ModuleAttrMixin
 from diffusion_policy.common.pytorch_util import dict_apply, replace_submodules
-
-
+from diffusion_policy.model.force_torque.ft_transformer import ForceTorqueEncoder
+from diffusion_policy.model.force_torque.end_effector_encoding import EndEffectorEncoder
+from diffusion_policy.model.common.mha import Actor
+ 
 class MultiImageObsEncoder(ModuleAttrMixin):
     def __init__(self,
             shape_meta: dict,
@@ -28,18 +30,18 @@ class MultiImageObsEncoder(ModuleAttrMixin):
         Assumes low_dim input: B,D
         """
         super().__init__()
-
+ 
         rgb_keys = list()
         low_dim_keys = list()
         key_model_map = nn.ModuleDict()
         key_transform_map = nn.ModuleDict()
         key_shape_map = dict()
-
+ 
         # handle sharing vision backbone
         if share_rgb_model:
             assert isinstance(rgb_model, nn.Module)
             key_model_map['rgb'] = rgb_model
-
+ 
         obs_shape_meta = shape_meta['obs']
         for key, attr in obs_shape_meta.items():
             shape = tuple(attr['shape'])
@@ -64,7 +66,7 @@ class MultiImageObsEncoder(ModuleAttrMixin):
                             root_module=this_model,
                             predicate=lambda x: isinstance(x, nn.BatchNorm2d),
                             func=lambda x: nn.GroupNorm(
-                                num_groups=x.num_features//16, 
+                                num_groups=x.num_features//16,
                                 num_channels=x.num_features)
                         )
                     key_model_map[key] = this_model
@@ -81,7 +83,7 @@ class MultiImageObsEncoder(ModuleAttrMixin):
                         size=(h,w)
                     )
                     input_shape = (shape[0],h,w)
-
+ 
                 # configure randomizer
                 this_randomizer = nn.Identity()
                 if crop_shape is not None:
@@ -115,7 +117,7 @@ class MultiImageObsEncoder(ModuleAttrMixin):
                 raise RuntimeError(f"Unsupported obs type: {type}")
         rgb_keys = sorted(rgb_keys)
         low_dim_keys = sorted(low_dim_keys)
-
+ 
         self.shape_meta = shape_meta
         self.key_model_map = key_model_map
         self.key_transform_map = key_transform_map
@@ -123,10 +125,16 @@ class MultiImageObsEncoder(ModuleAttrMixin):
         self.rgb_keys = rgb_keys
         self.low_dim_keys = low_dim_keys
         self.key_shape_map = key_shape_map
-
+ 
+        device = self.device
+ 
+        self.mha = Actor(use_eef_encoder=False).to(device)
+        
+ 
     def forward(self, obs_dict):
         batch_size = None
         features = list()
+        cf0,cf1,cf2,cf3 = None, None, None, None
         # process rgb input
         if self.share_rgb_model:
             # pass all rgb obs to rgb model
@@ -162,17 +170,41 @@ class MultiImageObsEncoder(ModuleAttrMixin):
                 assert img.shape[1:] == self.key_shape_map[key]
                 img = self.key_transform_map[key](img)
                 feature = self.key_model_map[key](img)
-                features.append(feature)
+                feature = nn.Linear(512,256).to(self.device) (feature)
+
+                if key =="camera_0":
+                    cf0 = feature.to(self.device)
+                if key =="camera_1":
+                    cf1 = feature.to(self.device)
+                if key =="camera_2":
+                    cf2 = feature.to(self.device)
+                if key =="camera_3":
+                    cf3 = feature.to(self.device)
+
+                # features.append(feature)
         
-        # process lowdim input
-        for key in self.low_dim_keys:
-            data = obs_dict[key]
-            if batch_size is None:
-                batch_size = data.shape[0]
-            else:
-                assert batch_size == data.shape[0]
-            assert data.shape[1:] == self.key_shape_map[key]
-            features.append(data)
+       
+ 
+ 
+        if len(self.low_dim_keys) > 0:
+            ft_data = obs_dict['ft_data']
+            # end_effector = obs_dict['replica_eef_pose']
+
+
+            action_logits,xyzrpy, weights = self.mha(ft_data,cf0,cf1,cf2,cf3 )
+            # print("the action logits are: ", action_logits.shape)
+            # print("the weights are: ", weights.shape)
+ 
+            features.append(action_logits)
+
+        # if obs_dict.get('replica_eef_pose') is not None:
+        #     data = obs_dict["replica_eef_pose"]
+        #     if batch_size is None:
+        #         batch_size = data.shape[0]
+        #     else:
+        #         assert batch_size == data.shape[0]
+        #     assert data.shape[1:] == self.key_shape_map["replica_eef_pose"]
+        #     features.append(data)
         
         # concatenate all features
         result = torch.cat(features, dim=-1)
@@ -186,10 +218,11 @@ class MultiImageObsEncoder(ModuleAttrMixin):
         for key, attr in obs_shape_meta.items():
             shape = tuple(attr['shape'])
             this_obs = torch.zeros(
-                (batch_size,) + shape, 
+                (batch_size,) + shape,
                 dtype=self.dtype,
                 device=self.device)
             example_obs_dict[key] = this_obs
         example_output = self.forward(example_obs_dict)
         output_shape = example_output.shape[1:]
         return output_shape
+ 

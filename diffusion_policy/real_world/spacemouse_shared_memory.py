@@ -1,7 +1,6 @@
 import multiprocessing as mp
 import numpy as np
 import time
-from spnav import spnav_open, spnav_poll_event, spnav_close, SpnavMotionEvent, SpnavButtonEvent
 from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemoryRingBuffer
 
 class Spacemouse(mp.Process):
@@ -53,7 +52,6 @@ class Spacemouse(mp.Process):
         example = {
             # 3 translation, 3 rotation, 1 period
             'motion_event': np.zeros((7,), dtype=np.int64),
-            # left and right button
             'button_state': np.zeros((n_buttons,), dtype=bool),
             'receive_timestamp': time.time()
         }
@@ -126,7 +124,7 @@ class Spacemouse(mp.Process):
 
     # ========= main loop ==========
     def run(self):
-        spnav_open()
+        self._spnav_open()
         try:
             motion_event = np.zeros((7,), dtype=np.int64)
             button_state = np.zeros((self.n_buttons,), dtype=bool)
@@ -139,7 +137,7 @@ class Spacemouse(mp.Process):
             self.ready_event.set()
 
             while not self.stop_event.is_set():
-                event = spnav_poll_event()
+                event = self._spnav_poll_event()
                 receive_timestamp = time.time()
                 if isinstance(event, SpnavMotionEvent):
                     motion_event[:3] = event.translation
@@ -157,4 +155,28 @@ class Spacemouse(mp.Process):
                     })
                     time.sleep(1/self.frequency)
         finally:
-            spnav_close()
+            self._spnav_close()
+
+    def _spnav_open(self):
+        # Placeholder for spnav_open
+        pass
+
+    def _spnav_poll_event(self):
+        # Placeholder for spnav_poll_event
+        # This should return an event-like object for testing purposes
+        return None
+
+    def _spnav_close(self):
+        # Placeholder for spnav_close
+        pass
+
+class SpnavMotionEvent:
+    def __init__(self, translation, rotation, period):
+        self.translation = translation
+        self.rotation = rotation
+        self.period = period
+
+class SpnavButtonEvent:
+    def __init__(self, bnum, press):
+        self.bnum = bnum
+        self.press = press

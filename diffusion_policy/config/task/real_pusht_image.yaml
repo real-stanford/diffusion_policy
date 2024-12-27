@@ -1,31 +1,24 @@
 name: real_image
+data_name: ft_vision
 
-image_shape: [3, 240, 320]
-dataset_path: data/pusht_real/real_pusht_20230105
+task_type: ft_vision 
+image_shape: [3,480,640]
+dataset_path: /home/bmv/diffusion_policy_new/data/ft_vision
 
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
-  obs:
-    # camera_0:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    camera_1:
+  obs:  
+    camera_0:
       shape: ${task.image_shape}
       type: rgb
-    # camera_2:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    camera_3:
-      shape: ${task.image_shape}
-      type: rgb
-    # camera_4:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    robot_eef_pose:
-      shape: [2]
+    replica_eef_pose:
+      shape: [6,]
+      type: low_dim
+    ft_data:
+      shape: [10,6,]
       type: low_dim
   action: 
-    shape: [2]
+    shape: [6,]
 
 env_runner:
   _target_: diffusion_policy.env_runner.real_pusht_image_runner.RealPushTImageRunner
@@ -41,7 +34,7 @@ dataset:
   n_latency_steps: ${n_latency_steps}
   use_cache: True
   seed: 42
-  val_ratio: 0.00
+  val_ratio: 0.1
   max_train_episodes: null
   delta_action: False
 
