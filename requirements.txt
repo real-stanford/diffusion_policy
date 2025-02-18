@@ -2,7 +2,7 @@ accelerate==0.13.2
 attrs==23.2.0
 av==10.0.0
 boto3==1.24.96
-botocore==1.24.96
+botocore
 cattrs==24.1.2
 click==8.0.4
 cython==0.29.32
@@ -41,12 +41,12 @@ scikit-image==0.19.3
 scikit-video==1.1.11
 scipy==1.9.1
 shapely==1.8.4
-tensorboard==2.10.1
-tensorboardx==2.5.1
+tensorboard
+tensorboardx
 tqdm==4.64.1
 types-protobuf==5.28.3.20241030
 typing_extensions==4.12.2
-urllib3==2.2.3
+urllib3
 uvicorn
-wandb==0.13.3
+wandb
 zarr==2.12.0
