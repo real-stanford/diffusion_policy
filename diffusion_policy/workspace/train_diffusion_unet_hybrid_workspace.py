@@ -28,7 +28,6 @@ from diffusion_policy.model.diffusion.ema_model import EMAModel
 from diffusion_policy.policy.diffusion_unet_hybrid_image_policy import (
     DiffusionUnetHybridImagePolicy,
 )
-from diffusion_policy.dataset.strawberry_image_hybrid_dataset import StrawberryImageHybridDataset
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from omegaconf import OmegaConf
 from torch.utils.data import DataLoader
@@ -73,21 +72,13 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
             if lastest_ckpt_path.is_file():
                 print(f"Resuming from checkpoint {lastest_ckpt_path}")
                 self.load_checkpoint(path=lastest_ckpt_path)
-        
-        dataset_cfg = cfg.task.dataset  # Extract dataset config
 
-        dataset = StrawberryImageHybridDataset(
-            hdf5_path=dataset_cfg.zarr_path,
-            horizon=dataset_cfg.horizon,
-            pad_before=dataset_cfg.pad_before,
-            pad_after=dataset_cfg.pad_after,
-            seed=dataset_cfg.seed,
-            val_ratio=dataset_cfg.val_ratio
-        )
-
+        # configure dataset
+        dataset: BaseImageDataset
+        dataset = hydra.utils.instantiate(cfg.task.dataset)
+        assert isinstance(dataset, BaseImageDataset)
         train_dataloader = DataLoader(dataset, **cfg.dataloader)
         normalizer = dataset.get_normalizer()
-        print("Created dataset")
 
         # configure validation dataset
         val_dataset = dataset.get_validation_dataset()
@@ -159,7 +150,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
 
         # training loop
         log_path = os.path.join(self.output_dir, "logs.json.txt")
-        with JsonLogger(log_path) as json_logger:
+        with JsonLogger(log_path) as json_logger:  # noqa
             for local_epoch_idx in range(cfg.training.num_epochs):
                 step_log = dict()
                 # ========= train for this epoch ==========

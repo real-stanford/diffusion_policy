@@ -8,10 +8,10 @@ shape_meta:  # pa arm real
     shape: [5]
     type: low_dim
   obs:
-    replicator_rgb:
-      shape: [3, 96, 96]
+    cam_end_effector:
+      shape: [3, 112, 112]
       type: rgb
-    joint_positions:
+    low_dim_states:
       shape: [5]
       type: low_dim
 
@@ -34,14 +34,14 @@ checkpoint:
     monitor_key: train_loss
 
 dataloader:
-  batch_size: 32
+  batch_size: 128
   num_workers: 8
   persistent_workers: false
   pin_memory: true
   shuffle: true
 
 val_dataloader:
-  batch_size: 32
+  batch_size: 128
   num_workers: 8
   persistent_workers: false
   pin_memory: true
@@ -77,7 +77,7 @@ optimizer:
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_hybrid_image_policy.DiffusionUnetHybridImagePolicy
   cond_predict_scale: true
-  crop_shape: [84, 84]
+  crop_shape: [96, 96]
   diffusion_step_embed_dim: 128
   down_dims: [256, 512, 1024]
   eval_fixed_crop: true
@@ -102,14 +102,14 @@ policy:
 
 task:
   dataset:
-    _target_: diffusion_policy.dataset.base_image_dataset.ImageDataset
-    horizon: 16
+    _target_: diffusion_policy.dataset.strawberry_image_hybrid_dataset.StrawberryImageHybridDataset
+    horizon: ${horizon}
     max_train_episodes: 90
-    pad_after: 7
-    pad_before: 1
+    pad_after: 0
+    pad_before: 0
     seed: 42
-    val_ratio: 0.02
-    zarr_path: data/output_50.hdf5  # UPDATE THIS PATH
+    val_ratio: 0.05
+    hdf5_path: data/output_50.hdf5
   env_runner:
     _target_: diffusion_policy.env_runner.pa_arm_robot_runner.PAArmSimRunner
     fps: 10
@@ -125,7 +125,7 @@ task:
     past_action: false
     test_start_seed: 100000
     train_start_seed: 0
-  image_shape: [3, 96, 96]
+  image_shape: [3, 112, 112]
   name: pa_arm_robot
   shape_meta: ${shape_meta}
 
