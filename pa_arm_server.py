@@ -6,21 +6,38 @@ REST API server for PA Arm Sim prediction model.
 
 import base64
 import io
+import logging
+import os
 from typing import Dict, List, Optional
 
-import numpy as np
 import torch
 from fastapi import FastAPI, HTTPException
 from pa_arm_sim_prediction import ActionModel
 from PIL import Image
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from torchvision import transforms
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Constants
+MODEL_CHECKPOINT = os.getenv(
+    "MODEL_CHECKPOINT", "checkpoints/checkpoint_pa_arm_sim_2025_0217.ckpt"
+)
+IMAGE_SIZE = 96
+REQUIRED_SEQUENCE_LENGTH = 2
 
 
 class PredictRequest(BaseModel):
     """Request model for prediction endpoint."""
 
-    images: List[str]  # Base64 encoded images
-    joint_positions: List[List[float]]  # List of joint positions
+    images: List[str] = Field(
+        min_length=REQUIRED_SEQUENCE_LENGTH, max_length=REQUIRED_SEQUENCE_LENGTH
+    )
+    joint_positions: List[List[float]] = Field(
+        min_length=REQUIRED_SEQUENCE_LENGTH, max_length=REQUIRED_SEQUENCE_LENGTH
+    )
 
 
 class PredictResponse(BaseModel):
@@ -32,13 +49,11 @@ class PredictResponse(BaseModel):
 app = FastAPI()
 model: Optional[ActionModel] = None
 
-
-@app.on_event("startup")
-async def startup_event():
-    """Initialize model on startup."""
-    global model
-    # TODO: Make this configurable
-    model = ActionModel("checkpoints/checkpoint_pa_arm_sim_2025_0217.ckpt")
+# Create transform pipeline once
+image_transform = transforms.Compose([
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor(),
+])
 
 
 def decode_image(base64_str: str) -> torch.Tensor:
@@ -50,32 +65,36 @@ def decode_image(base64_str: str) -> torch.Tensor:
     Returns:
         torch.Tensor: Image tensor of shape (3, 96, 96)
 
+    Raises:
+        HTTPException: If image decoding fails
     """
     try:
-        # Decode base64 string to image
         img_data = base64.b64decode(base64_str)
         img = Image.open(io.BytesIO(img_data))
+        return image_transform(img)  # type: ignore[return-value]
 
-        # Resize and convert to tensor
-        img = img.resize((96, 96))
-        img_array = np.array(img)
-        img_tensor = torch.from_numpy(img_array).float()
-
-        # Rearrange dimensions from (H, W, C) to (C, H, W)
-        img_tensor = img_tensor.permute(2, 0, 1)
-
-        # Normalize to [0, 1]
-        img_tensor = img_tensor / 255.0
-
-        return img_tensor
     except Exception as e:
+        logger.error("Image decoding failed: %s", e)
         raise HTTPException(
-            status_code=400, detail=f"Failed to decode image: {e!s}"
+            status_code=400, detail="Failed to decode image: %s" % e
         ) from e
 
 
+@app.on_event("startup")
+def startup_event() -> None:
+    """Initialize model on startup."""
+    global model  # noqa: PLW0603
+    try:
+        logger.info("Loading model from %s", MODEL_CHECKPOINT)
+        model = ActionModel(MODEL_CHECKPOINT)
+        logger.info("Model loaded successfully")
+    except Exception as e:
+        logger.error("Failed to load model: %s", e)
+        raise RuntimeError("Failed to initialize model: %s" % e) from e
+
+
 @app.post("/predict", response_model=PredictResponse)
-async def predict(request: PredictRequest) -> Dict:
+def predict(request: PredictRequest) -> Dict:
     """Predict actions from images and joint positions.
 
     Args:
@@ -84,35 +103,31 @@ async def predict(request: PredictRequest) -> Dict:
     Returns:
         Dict containing predicted actions
 
+    Raises:
+        HTTPException: If prediction fails
     """
     if model is None:
+        logger.error("Model not initialized")
         raise HTTPException(status_code=500, detail="Model not initialized")
 
     try:
         # Convert images to tensor
-        if len(request.images) != 2:
-            raise HTTPException(status_code=400, detail="Exactly 2 images required")
-
         images = torch.stack([decode_image(img) for img in request.images])
 
         # Convert joint positions to tensor
-        if len(request.joint_positions) != 2:
-            raise HTTPException(
-                status_code=400, detail="Exactly 2 joint positions required"
-            )
-
         joint_positions = torch.tensor(request.joint_positions, dtype=torch.float32)
+
+        # Validate joint position values
+        if not torch.all(torch.isfinite(joint_positions)):
+            raise ValueError("Joint positions contain invalid values")
 
         # Get prediction
         actions = model.predict(images, joint_positions)
-
-        # Convert to list for JSON response
-        actions_list = actions.tolist()
-
-        return {"actions": actions_list}
+        return {"actions": actions.tolist()}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {e!s}") from e
+        logger.error("Prediction failed: %s", e)
+        raise HTTPException(status_code=500, detail="Prediction failed: %s" % e) from e
 
 
 if __name__ == "__main__":

@@ -5,12 +5,65 @@ Client for PA Arm Sim prediction service.
 """
 
 import base64
-import io
-from typing import List
+from typing import List, Tuple
 
+import cv2
 import numpy as np
 import requests
-from PIL import Image
+
+IMAGE_SIZE = (96, 96)
+PAD_RATIO = 0.0
+
+
+def process_image(
+    image: np.ndarray,
+    image_size: Tuple[int, int] = IMAGE_SIZE,
+    pad_ratio: float = PAD_RATIO,
+) -> np.ndarray:
+    """Perform center crop with padding based on the shorter dimension.
+
+    Args:
+        image: Input image as numpy array
+        image_size: Tuple of (height, width)
+        pad_ratio: Ratio to determine padding size (e.g., 0.2 for 20% padding)
+
+    Returns:
+        Cropped image as numpy array
+    """
+    height, width = image.shape[:2]
+    shorter_dim = min(width, height)
+    crop_size = int(shorter_dim * (1.0 - pad_ratio))
+
+    start_x = (width - crop_size) // 2
+    start_y = (height - crop_size) // 2
+
+    cropped = image[start_y : start_y + crop_size, start_x : start_x + crop_size]
+    resized = cv2.resize(cropped, image_size)
+    return resized
+
+
+def encode_image(image: np.ndarray) -> str:
+    """Encode image to base64 string.
+
+    Args:
+        image: Image array of shape (3, 96, 96)
+
+    Returns:
+        str: Base64 encoded image string
+    """
+    if image.ndim != 3:  # noqa: PLR2004
+        raise ValueError("Color image must have 3 dimensions")
+
+    if image.shape[0] == 3:  # noqa: PLR2004
+        # Convert to numpy and rearrange dimensions
+        # (C, H, W) -> (H, W, C)
+        image = np.transpose(image, (1, 2, 0))
+
+    # Directly encode cv2/numpy array to base64
+    _, buffer = cv2.imencode(".png", image)
+    img_str = base64.b64encode(buffer.tobytes()).decode()
+
+    return img_str
 
 
 class PredictionClient:
@@ -25,40 +78,15 @@ class PredictionClient:
         """
         self.base_url = f"http://{host}:{port}"
 
-    def encode_image(self, img_array: np.ndarray) -> str:
-        """Encode image to base64 string.
-
-        Args:
-            image: Image array of shape (3, 96, 96)
-
-        Returns:
-            str: Base64 encoded image string
-        """
-        # Convert to numpy and rearrange dimensions
-        img_array = np.transpose(img_array, (1, 2, 0))
-
-        # Scale to 0-255 and convert to uint8
-        img_array = (img_array * 255).astype(np.uint8)
-
-        # Convert to PIL Image
-        img = Image.fromarray(img_array)
-
-        # Save to bytes buffer
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-
-        # Encode to base64
-        img_str = base64.b64encode(buffer.getvalue()).decode()
-
-        return img_str
-
     def predict(
         self, images: List[np.ndarray], joint_positions: np.ndarray
     ) -> np.ndarray:
         """Get prediction from server."""
+        images = [process_image(img) for img in images]
+
         # Prepare request data
         request_data = {
-            "images": [self.encode_image(img) for img in images],
+            "images": [encode_image(img) for img in images],
             "joint_positions": joint_positions.tolist(),
         }
 
@@ -84,8 +112,10 @@ def main():
     client = PredictionClient()
     rng = np.random.default_rng(42)
 
-    # Create dummy data
-    images = [rng.standard_normal((3, 96, 96)) for _ in range(2)]
+    # Create dummy data - random uint8 images with values 0-255
+    images = [
+        rng.integers(0, 256, size=(720, 1280, 3), dtype=np.uint8) for _ in range(2)
+    ]
     joint_positions = rng.standard_normal((2, 4))
 
     # Get prediction
