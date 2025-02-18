@@ -3,7 +3,7 @@ _target_: diffusion_policy.workspace.train_diffusion_unet_hybrid_workspace.Train
 
 task_name: pa_arm_robot
 exp_name: default
-shape_meta:  # pa arm sim
+shape_meta:  # pa arm real
   action:
     shape: [5]
     type: low_dim
@@ -109,7 +109,7 @@ task:
     pad_before: 1
     seed: 42
     val_ratio: 0.02
-    zarr_path: /home/zordi/robomimic/robomimic/scripts/output_50.hdf5  # UPDATE THIS PATH
+    zarr_path: data/output_50.hdf5  # UPDATE THIS PATH
   env_runner:
     _target_: diffusion_policy.env_runner.pa_arm_robot_runner.PAArmSimRunner
     fps: 10
@@ -125,7 +125,7 @@ task:
     past_action: false
     test_start_seed: 100000
     train_start_seed: 0
-  image_shape: [3, 112, 112]
+  image_shape: [3, 96, 96]
   name: pa_arm_robot
   shape_meta: ${shape_meta}
 
