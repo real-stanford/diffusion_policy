@@ -38,7 +38,7 @@ async def startup_event():
     """Initialize model on startup."""
     global model
     # TODO: Make this configurable
-    model = ActionModel("checkpoint_pa_arm_sim_2025_0217.ckpt")
+    model = ActionModel("checkpoints/checkpoint_pa_arm_sim_2025_0217.ckpt")
 
 
 def decode_image(base64_str: str) -> torch.Tensor:
@@ -49,6 +49,7 @@ def decode_image(base64_str: str) -> torch.Tensor:
 
     Returns:
         torch.Tensor: Image tensor of shape (3, 96, 96)
+
     """
     try:
         # Decode base64 string to image
@@ -68,7 +69,9 @@ def decode_image(base64_str: str) -> torch.Tensor:
 
         return img_tensor
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to decode image: {e!s}")
+        raise HTTPException(
+            status_code=400, detail=f"Failed to decode image: {e!s}"
+        ) from e
 
 
 @app.post("/predict", response_model=PredictResponse)
@@ -80,6 +83,7 @@ async def predict(request: PredictRequest) -> Dict:
 
     Returns:
         Dict containing predicted actions
+
     """
     if model is None:
         raise HTTPException(status_code=500, detail="Model not initialized")
@@ -108,7 +112,7 @@ async def predict(request: PredictRequest) -> Dict:
         return {"actions": actions_list}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Prediction failed: {e!s}")
+        raise HTTPException(status_code=500, detail=f"Prediction failed: {e!s}") from e
 
 
 if __name__ == "__main__":
