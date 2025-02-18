@@ -6,10 +6,10 @@ Client for PA Arm Sim prediction service.
 
 import base64
 import io
+from typing import List
 
 import numpy as np
 import requests
-import torch
 from PIL import Image
 
 
@@ -25,17 +25,16 @@ class PredictionClient:
         """
         self.base_url = f"http://{host}:{port}"
 
-    def encode_image(self, image: torch.Tensor) -> str:
-        """Encode image tensor to base64 string.
+    def encode_image(self, img_array: np.ndarray) -> str:
+        """Encode image to base64 string.
 
         Args:
-            image: Image tensor of shape (3, 96, 96)
+            image: Image array of shape (3, 96, 96)
 
         Returns:
             str: Base64 encoded image string
         """
         # Convert to numpy and rearrange dimensions
-        img_array = image.numpy()
         img_array = np.transpose(img_array, (1, 2, 0))
 
         # Scale to 0-255 and convert to uint8
@@ -54,27 +53,9 @@ class PredictionClient:
         return img_str
 
     def predict(
-        self, images: torch.Tensor, joint_positions: torch.Tensor
-    ) -> torch.Tensor:
-        """Get prediction from server.
-
-        Args:
-            images: Image tensor of shape (2, 3, 96, 96)
-            joint_positions: Joint positions tensor of shape (2, 4)
-
-        Returns:
-            torch.Tensor: Predicted actions of shape (8, 4)
-        """
-        # Validate input shapes
-        if images.shape != (2, 3, 96, 96):
-            raise ValueError(
-                f"Expected images shape (2, 3, 96, 96), got {images.shape}"
-            )
-        if joint_positions.shape != (2, 4):
-            raise ValueError(
-                f"Expected joint_positions shape (2, 4), got {joint_positions.shape}"
-            )
-
+        self, images: List[np.ndarray], joint_positions: np.ndarray
+    ) -> np.ndarray:
+        """Get prediction from server."""
         # Prepare request data
         request_data = {
             "images": [self.encode_image(img) for img in images],
@@ -91,7 +72,7 @@ class PredictionClient:
         # Parse response
         try:
             result = response.json()
-            actions = torch.tensor(result["actions"])
+            actions = np.array(result["actions"])
             return actions
         except Exception as e:
             raise ValueError(f"Failed to parse server response: {e!s}") from e
@@ -101,10 +82,11 @@ def main():
     """Example usage of PredictionClient."""
     # Create client
     client = PredictionClient()
+    rng = np.random.default_rng(42)
 
     # Create dummy data
-    images = torch.randn(2, 3, 96, 96)
-    joint_positions = torch.randn(2, 4)
+    images = [rng.standard_normal((3, 96, 96)) for _ in range(2)]
+    joint_positions = rng.standard_normal((2, 4))
 
     # Get prediction
     try:
