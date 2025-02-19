@@ -48,7 +48,7 @@ class PAArmSimDataset(BaseImageDataset):
                 {
                     "episode_name": ep_name,
                     "joint_positions": action_log["data"]["joint_positions"],
-                    "replicator_rgb": action_log["replicator_rgb"],
+                    "images": action_log["replicator_rgb"],
                 }
                 for action_log in ep_logs["Isaac Sim Data"]
             ]
@@ -82,7 +82,7 @@ class PAArmSimDataset(BaseImageDataset):
             array_to_stats(np.array(self.all_joint_positions))
         )
         normalizer["action"] = normalizer["joint_positions"]
-        normalizer["replicator_rgb"] = get_image_range_normalizer()
+        normalizer["images"] = get_image_range_normalizer()
         return normalizer
 
     def __len__(self) -> int:
@@ -100,19 +100,19 @@ class PAArmSimDataset(BaseImageDataset):
         step = self.step_list[self.step_id_list[idx]]
 
         joint_positions = list()
-        replicator_rgb = list()
+        rgb_images = list()
         for i in range(len(step)):
             joint_positions.append(
                 np.array(step[i]["joint_positions"], dtype=np.float32)
             )
-            replicator_rgb.append(
-                self._load_image(step[i]["episode_name"], step[i]["replicator_rgb"])
+            rgb_images.append(
+                self._load_image(step[i]["episode_name"], step[i]["images"])
             )
 
         torch_data = {
             "obs": {
                 "joint_positions": torch.from_numpy(np.array(joint_positions)).float(),
-                "replicator_rgb": torch.from_numpy(np.array(replicator_rgb)).float(),
+                "images": torch.from_numpy(np.array(rgb_images)).float(),
             },
             "action": torch.from_numpy(np.array(joint_positions)).float(),
         }

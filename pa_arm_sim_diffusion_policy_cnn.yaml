@@ -8,7 +8,7 @@ shape_meta:  # pa arm sim
     shape: [4]
     type: low_dim
   obs:
-    replicator_rgb:
+    images:
       shape: [3, 112, 112]
       type: rgb
     joint_positions:

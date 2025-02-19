@@ -75,8 +75,8 @@ class StrawberryImageHybridDataset(BaseImageDataset):
         indices = [0, 1, 2, 3, 10]
         for demo in self.demo_keys:
             self.episodes.append({
-                "cam_end_effector": self.file[f"data/{demo}/obs/cam_end_effector"],
-                "low_dim_states": self.file[f"data/{demo}/obs/low_dim_states"][
+                "images": self.file[f"data/{demo}/obs/cam_end_effector"],
+                "joint_positions": self.file[f"data/{demo}/obs/low_dim_states"][
                     :, indices
                 ],
                 "actions": self.file[f"data/{demo}/obs/low_dim_states"][:, indices],
@@ -107,8 +107,8 @@ class StrawberryImageHybridDataset(BaseImageDataset):
             "action": np.concatenate(
                 [ep["actions"][:] for ep in self.episodes], axis=0
             ),
-            "low_dim_states": np.concatenate(
-                [ep["low_dim_states"][:] for ep in self.episodes], axis=0
+            "joint_positions": np.concatenate(
+                [ep["joint_positions"][:] for ep in self.episodes], axis=0
             ),
         }
 
@@ -116,7 +116,7 @@ class StrawberryImageHybridDataset(BaseImageDataset):
         normalizer.fit(data=data, last_n_dims=1, mode=mode, **kwargs)
 
         # Normalize images separately (0-255 -> 0-1)
-        normalizer["cam_end_effector"] = get_image_range_normalizer()
+        normalizer["images"] = get_image_range_normalizer()
 
         return normalizer
 
@@ -149,8 +149,8 @@ class StrawberryImageHybridDataset(BaseImageDataset):
 
         end_idx = start_idx + self.horizon
 
-        agent_pos = episode["low_dim_states"][start_idx:end_idx].astype(np.float32)
-        image = episode["cam_end_effector"][start_idx:end_idx]
+        agent_pos = episode["joint_positions"][start_idx:end_idx].astype(np.float32)
+        image = episode["images"][start_idx:end_idx]
         action = episode["actions"][start_idx + 1 : end_idx + 1].astype(np.float32)
 
         agent_pos = self.pad_to_horizon(agent_pos)
@@ -162,8 +162,8 @@ class StrawberryImageHybridDataset(BaseImageDataset):
 
         data = {
             "obs": {
-                "cam_end_effector": image,
-                "low_dim_states": agent_pos,
+                "images": image,
+                "joint_positions": agent_pos,
             },
             "action": action,
         }
@@ -175,8 +175,8 @@ class StrawberryImageHybridDataset(BaseImageDataset):
         # Convert to Torch tensors
         torch_data = {
             "obs": {
-                "cam_end_effector": torch.from_numpy(data["obs"]["cam_end_effector"]),
-                "low_dim_states": torch.from_numpy(data["obs"]["low_dim_states"]),
+                "images": torch.from_numpy(data["obs"]["images"]),
+                "joint_positions": torch.from_numpy(data["obs"]["joint_positions"]),
             },
             "action": torch.from_numpy(data["action"]),
         }

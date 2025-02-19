@@ -8,10 +8,10 @@ shape_meta:  # pa arm real
     shape: [5]
     type: low_dim
   obs:
-    cam_end_effector:
+    images:
       shape: [3, 112, 112]
       type: rgb
-    low_dim_states:
+    joint_positions:
       shape: [5]
       type: low_dim
 
@@ -34,14 +34,14 @@ checkpoint:
     monitor_key: train_loss
 
 dataloader:
-  batch_size: 128
+  batch_size: 256
   num_workers: 8
   persistent_workers: false
   pin_memory: true
   shuffle: true
 
 val_dataloader:
-  batch_size: 128
+  batch_size: 256
   num_workers: 8
   persistent_workers: false
   pin_memory: true
