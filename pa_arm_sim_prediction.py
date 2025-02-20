@@ -2,7 +2,7 @@
 Copyright 2025 Zordi, Inc. All rights reserved.
 
 Usage:
-python pa_arm_sim_prediction.py -c checkpoint_pa_arm_sim_2025_0217.ckpt
+python pa_arm_sim_prediction.py -c checkpoint_pa_arm_robot_2025_0218.ckpt
 """
 
 import click
@@ -14,8 +14,14 @@ from diffusion_policy.workspace.base_workspace import BaseWorkspace
 
 
 class ActionModel:
-    def __init__(self, checkpoint_filepath: str):
-        payload = torch.load(open(checkpoint_filepath, "rb"), pickle_module=dill)
+    """Predict action from images and joint positions.
+
+    Args:
+        checkpoint_file_path: path to the checkpoint file
+    """
+
+    def __init__(self, checkpoint_file_path: str):
+        payload = torch.load(open(checkpoint_file_path, "rb"), pickle_module=dill)
         cfg = payload["cfg"]
         cls = hydra.utils.get_class(cfg._target_)
         workspace = cls(cfg)
@@ -35,14 +41,14 @@ class ActionModel:
     ) -> torch.Tensor:
         """
         Args:
-            images: torch.Tensor, shape: (2, 3, 96, 96)
-            joint_positions: torch.Tensor, shape: (2, 4)
+            images: torch.Tensor, shape: e.g. (obs_len, C, H, W)
+            joint_positions: torch.Tensor, shape: e.g. (obs_len, jnt_gim)
 
         Returns:
-            action: torch.Tensor, shape: (8, 4)
+            action: torch.Tensor, shape: e.g. (act_len, jnt_gim)
         """
         obs_dict = {
-            "replicator_rgb": images.unsqueeze(0).to(self.device),
+            "images": images.unsqueeze(0).to(self.device),
             "joint_positions": joint_positions.unsqueeze(0).to(self.device),
         }
         action = self.policy.predict_action(obs_dict)
@@ -51,8 +57,7 @@ class ActionModel:
 
 @click.command()
 @click.option("-c", "--checkpoint", required=True)
-@click.option("-o", "--output", required=False, default="./pa_arm_sim_output")
-def main(checkpoint, output):
+def main(checkpoint: str) -> None:  # noqa: D103
     # load checkpoint
     payload = torch.load(open(checkpoint, "rb"), pickle_module=dill)
     cfg = payload["cfg"]
@@ -61,6 +66,7 @@ def main(checkpoint, output):
     workspace: BaseWorkspace
     workspace.load_payload(payload, exclude_keys=None, include_keys=None)
 
+    # configure policy
     policy: BaseImagePolicy
     policy = workspace.model
     if cfg.training.use_ema:
@@ -69,8 +75,9 @@ def main(checkpoint, output):
     device = torch.device("cuda")
     policy.eval().to(device)
 
+    # try the policy with random input
     obs_dict = {
-        "replicator_rgb": torch.randn(2, 3, 96, 96).unsqueeze(0).to(device),
+        "images": torch.randn(2, 3, 96, 96).unsqueeze(0).to(device),
         "joint_positions": torch.randn(2, 4).unsqueeze(0).to(device),
     }
 
