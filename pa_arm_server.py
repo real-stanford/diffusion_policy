@@ -12,7 +12,7 @@ from typing import Dict, List, Optional
 
 import torch
 from fastapi import FastAPI, HTTPException
-from pa_arm_sim_prediction import ActionModel
+from pa_arm_prediction import ActionModel
 from PIL import Image
 from pydantic import BaseModel, Field
 from torchvision import transforms

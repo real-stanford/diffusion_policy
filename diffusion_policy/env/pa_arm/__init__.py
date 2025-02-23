@@ -7,3 +7,10 @@ register(
     max_episode_steps=200,
     reward_threshold=1.0,
 )
+
+register(
+    id="pa-arm-real-v0",
+    entry_point="envs.pa_arm.pa_arm_real_env:PAArmRealEnv",
+    max_episode_steps=200,
+    reward_threshold=1.0,
+)
