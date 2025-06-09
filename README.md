@@ -68,7 +68,7 @@ $ wget --recursive --no-parent --no-host-directories --relative --reject="index.
 ### 🖥️ Simulation
 To reproduce our simulation benchmark results, install our conda environment on a Linux machine with Nvidia GPU. On Ubuntu 20.04 you need to install the following apt packages for mujoco:
 ```console
-$ sudo apt install -y libosmesa6-dev libgl1-mesa-glx libglfw3 patchelf
+$ sudo apt install -y libosmesa6-dev libgl1 libglx-mesa0 libglfw3 patchelf
 ```
 
 We recommend [Mambaforge](https://github.com/conda-forge/miniforge#mambaforge) instead of the standard anaconda distribution for faster installation: 
