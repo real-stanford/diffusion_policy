@@ -1,11 +1,11 @@
-name: robodiff
+name: robodiff_real
 channels:
   - pytorch
   - pytorch3d
   - nvidia
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   - pip=22.2.2
   - cudatoolkit=11.6
   - pytorch=1.12.1
@@ -14,7 +14,7 @@ dependencies:
   - numpy=1.23.3
   - numba==0.56.4
   - scipy==1.9.1
-  - py-opencv=4.6.0
+  #- py-opencv=4.6.0
   - cffi=1.15.1
   - ipykernel=6.16
   - matplotlib=3.6.1
@@ -34,7 +34,7 @@ dependencies:
   - shapely=1.8.4
   - cython=0.29.32
   - imageio=2.22.0
-  - imageio-ffmpeg=0.4.7
+  #- imageio-ffmpeg=0.4.7
   - termcolor=2.0.1
   - tensorboard=2.10.1
   - tensorboardx=2.5.1
@@ -44,7 +44,8 @@ dependencies:
   - accelerate=0.13.2
   - datasets=2.6.1
   - diffusers=0.11.1
-  - av=10.0.0
+  #- av=9.2.0
+  #- ffmpeg=4.4.2
   - cmake=3.24.3
   # trick to avoid cpu affinity issue described in https://github.com/pytorch/pytorch/issues/99625
   - llvm-openmp=14
@@ -55,15 +56,19 @@ dependencies:
     # requires mujoco py dependencies libosmesa6-dev libgl1-mesa-glx libglfw3 patchelf
     - free-mujoco-py==2.1.6
     - pygame==2.1.2
+    - ffmpeg==4.4.2
+    - py-opencv==4.6.0
+    - av==9.2.0
+    - imageio-ffmpeg==0.4.7
     - pybullet-svl==3.1.6.4
-    - robosuite @ https://github.com/cheng-chi/robosuite/archive/277ab9588ad7a4f4b55cf75508b44aa67ec171f0.tar.gz
+    #- robosuite @ https://github.com/cheng-chi/robosuite/archive/277ab9588ad7a4f4b55cf75508b44aa67ec171f0.tar.gz
     - robomimic==0.2.0
     - pytorchvideo==0.1.5
     # requires librealsense https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md
     - pyrealsense2==2.51.1.4348
     # requires apt install libspnav-dev spacenavd; systemctl start spacenavd
     - spnav @ https://github.com/cheng-chi/spnav/archive/c1c938ebe3cc542db4685e0d13850ff1abfdb943.tar.gz
-    - ur-rtde==1.5.5
+    #- ur-rtde==1.5.5
     - atomics==1.0.2
     # pip package required for jpeg-xl
     - imagecodecs==2022.9.26

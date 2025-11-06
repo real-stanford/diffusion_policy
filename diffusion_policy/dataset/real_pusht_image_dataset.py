@@ -245,7 +245,7 @@ def _get_replay_buffer(dataset_path, shape_meta, store):
                 assert tuple(shape) in [(2,),(6,)]
     
     action_shape = tuple(shape_meta['action']['shape'])
-    assert action_shape in [(2,),(6,)]
+    assert action_shape in [(2,),(7,)]
 
     # load data
     cv2.setNumThreads(1)

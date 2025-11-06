@@ -180,7 +180,7 @@ def real_data_to_replay_buffer(
                                     raise RuntimeError('Failed to encode image!')
                             pbar.update(len(completed))
                         
-                        global_idx = episode_start + step_idx
+                        global_idx = int(episode_start + step_idx)
                         futures.add(executor.submit(put_img, arr, global_idx, frame))
 
                         if step_idx == (episode_length - 1):

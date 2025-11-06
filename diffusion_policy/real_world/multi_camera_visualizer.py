@@ -3,11 +3,11 @@ import multiprocessing as mp
 import numpy as np
 import cv2
 from threadpoolctl import threadpool_limits
-from diffusion_policy.real_world.multi_realsense import MultiRealsense
+from diffusion_policy.real_world.multi_webcam import MultiWebcam
 
 class MultiCameraVisualizer(mp.Process):
     def __init__(self,
-        realsense: MultiRealsense,
+        realsense: MultiWebcam,
         row, col,
         window_name='Multi Cam Vis',
         vis_fps=60,

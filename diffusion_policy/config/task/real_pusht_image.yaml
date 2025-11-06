@@ -6,26 +6,23 @@ dataset_path: data/pusht_real/real_pusht_20230105
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
   obs:
-    # camera_0:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    camera_1:
-      shape: ${task.image_shape}
-      type: rgb
-    # camera_2:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    camera_3:
-      shape: ${task.image_shape}
-      type: rgb
-    # camera_4:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    robot_eef_pose:
-      shape: [2]
-      type: low_dim
+    camera_0:
+       shape: ${task.image_shape}
+       type: rgb
+    #camera_1:
+    #  shape: ${task.image_shape}
+    #  type: rgb
+    camera_2:
+       shape: ${task.image_shape}
+       type: rgb
+    #camera_3:
+    #  shape: ${task.image_shape}
+    #  type: rgb
+    camera_4:
+       shape: ${task.image_shape}
+       type: rgb
   action: 
-    shape: [2]
+    shape: [7]
 
 env_runner:
   _target_: diffusion_policy.env_runner.real_pusht_image_runner.RealPushTImageRunner

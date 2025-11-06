@@ -34,7 +34,7 @@ import skvideo.io
 from omegaconf import OmegaConf
 import scipy.spatial.transform as st
 from diffusion_policy.real_world.real_env import RealEnv
-from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
+#from diffusion_policy.real_world.spacemouse_shared_memory import Spacemouse
 from diffusion_policy.common.precise_sleep import precise_wait
 from diffusion_policy.real_world.real_inference_util import (
     get_real_obs_resolution, 
@@ -141,7 +141,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
     print("action_offset:", action_offset)
 
     with SharedMemoryManager() as shm_manager:
-        with Spacemouse(shm_manager=shm_manager) as sm, RealEnv(
+        with RealEnv(
             output_dir=output, 
             robot_ip=robot_ip, 
             frequency=frequency,
@@ -160,9 +160,9 @@ def main(input, output, robot_ip, match_dataset, match_episode,
 
             # Should be the same as demo
             # realsense exposure
-            env.realsense.set_exposure(exposure=120, gain=0)
+            env.realsense.set_exposure(exposure=120)
             # realsense white balance
-            env.realsense.set_white_balance(white_balance=5900)
+            #env.realsense.set_white_balance(white_balance=5900)
 
             print("Waiting for realsense")
             time.sleep(1.0)
@@ -182,89 +182,6 @@ def main(input, output, robot_ip, match_dataset, match_episode,
 
             print('Ready!')
             while True:
-                # ========= human control loop ==========
-                print("Human in control!")
-                state = env.get_robot_state()
-                target_pose = state['TargetTCPPose']
-                t_start = time.monotonic()
-                iter_idx = 0
-                while True:
-                    # calculate timing
-                    t_cycle_end = t_start + (iter_idx + 1) * dt
-                    t_sample = t_cycle_end - command_latency
-                    t_command_target = t_cycle_end + dt
-
-                    # pump obs
-                    obs = env.get_obs()
-
-                    # visualize
-                    episode_id = env.replay_buffer.n_episodes
-                    vis_img = obs[f'camera_{vis_camera_idx}'][-1]
-                    match_episode_id = episode_id
-                    if match_episode is not None:
-                        match_episode_id = match_episode
-                    if match_episode_id in episode_first_frame_map:
-                        match_img = episode_first_frame_map[match_episode_id]
-                        ih, iw, _ = match_img.shape
-                        oh, ow, _ = vis_img.shape
-                        tf = get_image_transform(
-                            input_res=(iw, ih), 
-                            output_res=(ow, oh), 
-                            bgr_to_rgb=False)
-                        match_img = tf(match_img).astype(np.float32) / 255
-                        vis_img = np.minimum(vis_img, match_img)
-
-                    text = f'Episode: {episode_id}'
-                    cv2.putText(
-                        vis_img,
-                        text,
-                        (10,20),
-                        fontFace=cv2.FONT_HERSHEY_SIMPLEX,
-                        fontScale=0.5,
-                        thickness=1,
-                        color=(255,255,255)
-                    )
-                    cv2.imshow('default', vis_img[...,::-1])
-                    key_stroke = cv2.pollKey()
-                    if key_stroke == ord('q'):
-                        # Exit program
-                        env.end_episode()
-                        exit(0)
-                    elif key_stroke == ord('c'):
-                        # Exit human control loop
-                        # hand control over to the policy
-                        break
-
-                    precise_wait(t_sample)
-                    # get teleop command
-                    sm_state = sm.get_motion_state_transformed()
-                    # print(sm_state)
-                    dpos = sm_state[:3] * (env.max_pos_speed / frequency)
-                    drot_xyz = sm_state[3:] * (env.max_rot_speed / frequency)
-  
-                    if not sm.is_button_pressed(0):
-                        # translation mode
-                        drot_xyz[:] = 0
-                    else:
-                        dpos[:] = 0
-                    if not sm.is_button_pressed(1):
-                        # 2D translation mode
-                        dpos[2] = 0    
-
-                    drot = st.Rotation.from_euler('xyz', drot_xyz)
-                    target_pose[:3] += dpos
-                    target_pose[3:] = (drot * st.Rotation.from_rotvec(
-                        target_pose[3:])).as_rotvec()
-                    # clip target pose
-                    target_pose[:2] = np.clip(target_pose[:2], [0.25, -0.45], [0.77, 0.40])
-
-                    # execute teleop command
-                    env.exec_actions(
-                        actions=[target_pose], 
-                        timestamps=[t_command_target-time.monotonic()+time.time()])
-                    precise_wait(t_cycle_end)
-                    iter_idx += 1
-                
                 # ========== policy control loop ==============
                 try:
                     # start episode
@@ -313,6 +230,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
                             perv_target_pose = this_target_pose
                             this_target_poses = np.expand_dims(this_target_pose, axis=0)
                         else:
+                            target_pose = obs['robot_eef_pose'][-1]
                             this_target_poses = np.zeros((len(action), len(target_pose)), dtype=np.float64)
                             this_target_poses[:] = target_pose
                             this_target_poses[:,[0,1]] = action

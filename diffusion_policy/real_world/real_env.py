@@ -5,8 +5,8 @@ import time
 import shutil
 import math
 from multiprocessing.managers import SharedMemoryManager
-from diffusion_policy.real_world.rtde_interpolation_controller import RTDEInterpolationController
-from diffusion_policy.real_world.multi_realsense import MultiRealsense, SingleRealsense
+from diffusion_policy.real_world.rtde_interpolation_controller import FrankaInterpolationController
+from diffusion_policy.real_world.multi_webcam import MultiWebcam, SingleWebcam
 from diffusion_policy.real_world.video_recorder import VideoRecorder
 from diffusion_policy.common.timestamp_accumulator import (
     TimestampObsAccumulator, 
@@ -75,7 +75,7 @@ class RealEnv:
             shm_manager = SharedMemoryManager()
             shm_manager.start()
         if camera_serial_numbers is None:
-            camera_serial_numbers = SingleRealsense.get_connected_devices_serial()
+            camera_serial_numbers = SingleWebcam.get_connected_devices_index()
 
         color_tf = get_image_transform(
             input_res=video_capture_resolution,
@@ -120,8 +120,7 @@ class RealEnv:
             thread_type='FRAME',
             thread_count=thread_per_video)
 
-        realsense = MultiRealsense(
-            serial_numbers=camera_serial_numbers,
+        realsense = MultiWebcam(
             shm_manager=shm_manager,
             resolution=video_capture_resolution,
             capture_fps=video_capture_fps,
@@ -130,9 +129,6 @@ class RealEnv:
             # ignores put_fps
             put_downsample=False,
             record_fps=recording_fps,
-            enable_color=True,
-            enable_depth=False,
-            enable_infrared=False,
             get_max_k=max_obs_buffer_size,
             transform=transform,
             vis_transform=vis_transform,
@@ -140,6 +136,7 @@ class RealEnv:
             video_recorder=video_recorder,
             verbose=False
             )
+        print(realsense.n_cameras, 'cameras found!')
         
         multi_cam_vis = None
         if enable_multi_cam_vis:
@@ -155,16 +152,16 @@ class RealEnv:
         if not init_joints:
             j_init = None
 
-        robot = RTDEInterpolationController(
+        robot = FrankaInterpolationController(
             shm_manager=shm_manager,
             robot_ip=robot_ip,
             frequency=125, # UR5 CB3 RTDE
             lookahead_time=0.1,
             gain=300,
-            max_pos_speed=max_pos_speed*cube_diag,
-            max_rot_speed=max_rot_speed*cube_diag,
+            max_pos_speed=float(max_pos_speed*cube_diag),
+            max_rot_speed=float(max_rot_speed*cube_diag),
             launch_timeout=3,
-            tcp_offset_pose=[0,0,tcp_offset,0,0,0],
+            tcp_offset_pose=None,
             payload_mass=None,
             payload_cog=None,
             joints_init=j_init,
@@ -432,4 +429,3 @@ class RealEnv:
         if this_video_dir.exists():
             shutil.rmtree(str(this_video_dir))
         print(f'Episode {episode_id} dropped!')
-

@@ -1,13 +1,23 @@
 import os
 import time
+import threading
 import enum
+from typing import Any
 import multiprocessing as mp
 from multiprocessing.managers import SharedMemoryManager
 import scipy.interpolate as si
 import scipy.spatial.transform as st
 import numpy as np
-from rtde_control import RTDEControlInterface
-from rtde_receive import RTDEReceiveInterface
+import numbers
+import atexit
+import rclpy
+import signal
+import sys
+from scipy.spatial.transform import Rotation as R
+from rclpy.node import Node
+from geometry_msgs.msg import PoseStamped, TwistStamped
+from sensor_msgs.msg import JointState
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 from diffusion_policy.shared_memory.shared_memory_queue import (
     SharedMemoryQueue, Empty)
 from diffusion_policy.shared_memory.shared_memory_ring_buffer import SharedMemoryRingBuffer
@@ -18,8 +28,196 @@ class Command(enum.Enum):
     SERVOL = 1
     SCHEDULE_WAYPOINT = 2
 
+class FrankaDataCollector(Node):
+    def __init__(self,shm_manager,get_max_k,frequency):
+        super().__init__('franka_data_collector')
 
-class RTDEInterpolationController(mp.Process):
+        self.shm_manager = shm_manager
+        self.frequency = frequency
+        self.timer_period = 1.0 / frequency  # seconds
+        self.get_max_k = get_max_k
+
+        self.create_subscription(
+            TwistStamped,
+            '/franka_robot_state_broadcaster/desired_end_effector_twist',
+            self.eef_twist_callback,
+            10
+        )
+        self.create_subscription(
+            JointState,
+            '/franka_robot_state_broadcaster/measured_joint_states',
+            self.joint_state_callback,
+            10
+        )
+        self.create_subscription(
+            PoseStamped,
+            '/franka_robot_state_broadcaster/current_pose',
+            self.pose_callback,
+            10
+        )
+
+        # Data container
+        self.example = dict()
+        self.ring_buffer = None
+
+        # Start timer to periodically push data
+        self.timer = self.create_timer(1/125, self.timer_callback)
+        
+        print("yes got here")
+
+    def eef_twist_callback(self, twist_msg: TwistStamped):
+        # Get eff velocity (q).
+        self.example['ActualTCPSpeed'] = np.array([
+            twist_msg.twist.linear.x,
+            twist_msg.twist.linear.y,
+            twist_msg.twist.linear.z,
+            twist_msg.twist.angular.x,
+            twist_msg.twist.angular.y,
+            twist_msg.twist.angular.z,],dtype=np.float32)
+        print(f"ActualTCPSpeed: {self.example['ActualTCPSpeed']}")
+
+        # Optional: External forces, torques
+
+    def joint_state_callback(self, msg: JointState):
+        # Just in case you want additional joint info
+        self.example['ActualQ'] = np.array(msg.position, dtype=np.float32)
+        self.example["ActualQd"] = np.array(msg.velocity,dtype=np.float32)
+        print(f"ActualQ: {self.example['ActualQ']}")
+
+    def pose_callback(self, msg: PoseStamped):
+        # End effector position and orientation
+        pos = msg.pose.position
+        ori = msg.pose.orientation
+        self.example['ActualTCPPose'] = np.array([pos.x, pos.y, pos.z, ori.x, ori.y, ori.z, ori.w])
+        #return self.example['ActualTCPPose']
+    
+    def timer_callback(self):
+        print("timer callback")
+        if not self.example:
+            # Skip if no data yet
+            return
+
+        # Add timestamp
+        self.example['robot_receive_timestamp'] = time.time()
+
+        # Create ring buffer if not already created
+        if self.ring_buffer is None:
+            self.ring_buffer = SharedMemoryRingBuffer.create_from_examples(
+                    shm_manager=self.shm_manager,
+                    examples=self.example,
+                    get_max_k=self.get_max_k,
+                    get_time_budget=0.2,
+                    put_desired_frequency=self.frequency
+                )
+
+        # Push the latest data into the ring buffer
+        self.ring_buffer.put(self.example)
+        self.get_logger().info('Data pushed to ring buffer.')
+        print(f"Data pushed to ring buffer: {self.example}")
+
+    def get_ring_buffer(self):
+        return self.ring_buffer
+    def getActualTCPPose(self):
+        timeout = 5.0  # seconds
+        interval = 0.05
+        waited = 0.0
+        while 'ActualTCPPose' not in self.example:
+            if waited >= timeout:
+                raise TimeoutError("Timed out waiting for ActualTCPPose.")
+            time.sleep(interval)
+            waited += interval
+        return self.example['ActualTCPPose']
+    def getActualTCPSpeed(self):
+        return self.example['ActualTCPSpeed'] if 'ActualTCPSpeed' in self.example else None
+    def getActualQ(self):
+        return self.example['ActualQ'] if 'ActualQ' in self.example else None
+    def getActualQd(self):
+        return self.example['ActualQd'] if 'ActualQd' in self.example else None
+    def getTargetTCPPose(self):
+        return self.example['TargetTCPPose'] if 'TargetTCPPose' in self.example else None
+    def getTargetTCPSpeed(self):
+        return self.example['TargetTCPSpeed'] if 'TargetTCPSpeed' in self.example else None
+    def getTargetQ(self):
+        return self.example['TargetQ'] if 'TargetQ' in self.example else None
+    def getTargetQd(self):
+        return self.example['TargetQd'] if 'TargetQd' in self.example else None
+    
+class FrankaDataPublisher(Node):
+    def __init__(self,frequency):
+        super().__init__('franka_pose_controller')
+        self.frequency = frequency
+        self.time = 1/frequency
+
+        self.publisher_ = self.create_publisher(JointTrajectory,'/fr3_arm_controller/joint_trajectory',10)
+
+
+        #self.timer = self.create_timer(self.time)
+        self.start_time = time.time()
+        self.joint_names = [
+            "fr3_joint1",
+            "fr3_joint2",
+            "fr3_joint3",
+            "fr3_joint4",
+            "fr3_joint5",
+            "fr3_joint6",
+            "fr3_joint7",
+        ]
+
+    def joint_init(self,joint_pose,max_vel,max_accl):
+        traj_msg = JointTrajectory()
+        traj_msg.header.stamp = self.get_clock().now().to_msg()
+        traj_msg.joint_names = self.joint_names
+        traj_msg.points = []
+        self.joint_pose = joint_pose
+        self.max_vel = max_vel
+        self.max_accl = max_accl
+
+        point = JointTrajectoryPoint()
+
+        point.positions = self.joint_pose
+
+        # Optional: leave velocities/accelerations empty or zero
+        point.velocities = [self.max_vel] * len(self.joint_names)
+        point.accelerations = [self.max_accl] * len(self.joint_names)
+        point.effort = []
+
+        # Time from start specifies how long to reach this pose
+        point.time_from_start.sec = 2
+        point.time_from_start.nanosec = 0
+
+        # Add point to trajectory
+        traj_msg.points.append(point)
+
+        # Publish
+        print(f"[DEBUG] Publishing to /fr3_arm_controller/joint_trajectory: {traj_msg}")
+
+        self.publisher_.publish(traj_msg)
+        self.get_logger().info(f'Published JointTrajectory Point: {point.positions}')
+    
+    def joint_trajectory(self, pose, vel, acc, dt, lookahead_time, gain):
+        self.eef_pose = pose
+        self.max_vel = vel
+        self.max_accl = acc
+        self.dt = dt
+        self.lookahead_time = lookahead_time
+        self.gain = gain
+        print(f"Joint trajectory command received: pose={pose}")
+        if pose is None or len(pose) != 7:
+            self.get_logger().warn("Invalid joint pose received. Skipping.")
+            return
+        current_time = time.time()
+        #amplitude = np.array([0.1, 0.2, 0.1, 0.3, 0.1, 0.2, 0.1])
+
+        #frequency = np.array([0.2, 0.15, 0.25, 0.1, 0.2, 0.15, 0.1]) * 2 * np.pi
+        #base_pose = np.array([0.0, -0.6, 0.0, -2.2, 0.0, 2.4, 0.9])
+        #dynamic_offset = amplitude * np.sin(frequency * current_time)
+        #joint_pose = base_pose + dynamic_offset
+        #joint_pose = joint_pose.tolist()
+
+        self.joint_init(pose,self.max_vel, self.max_accl)
+        
+        
+class FrankaInterpolationController(mp.Process):
     """
     To ensure sending command to the robot with predictable latency
     this controller need its separate process (due to python GIL)
@@ -77,7 +275,7 @@ class RTDEInterpolationController(mp.Process):
             joints_init = np.array(joints_init)
             assert joints_init.shape == (6,)
 
-        super().__init__(name="RTDEPositionalController")
+        super().__init__(name="FrankaPositionalController")
         self.robot_ip = robot_ip
         self.frequency = frequency
         self.lookahead_time = lookahead_time
@@ -92,6 +290,8 @@ class RTDEInterpolationController(mp.Process):
         self.joints_init_speed = joints_init_speed
         self.soft_real_time = soft_real_time
         self.verbose = verbose
+        self.get_max_k = get_max_k
+        self.shm_manager = shm_manager
 
         # build input queue
         example = {
@@ -119,22 +319,13 @@ class RTDEInterpolationController(mp.Process):
                 'TargetQ',
                 'TargetQd'
             ]
-        rtde_r = RTDEReceiveInterface(hostname=robot_ip)
-        example = dict()
-        for key in receive_keys:
-            example[key] = np.array(getattr(rtde_r, 'get'+key)())
-        example['robot_receive_timestamp'] = time.time()
-        ring_buffer = SharedMemoryRingBuffer.create_from_examples(
-            shm_manager=shm_manager,
-            examples=example,
-            get_max_k=get_max_k,
-            get_time_budget=0.2,
-            put_desired_frequency=frequency
-        )
+            
+
+        #ring_buffer = FrankaDataCollector(shm_manager,self.frequency,self.get_max_k).get_ring_buffer()
 
         self.ready_event = mp.Event()
         self.input_queue = input_queue
-        self.ring_buffer = ring_buffer
+        self.ring_buffer = None # will be initialized in run()
         self.receive_keys = receive_keys
     
     # ========= launch method ===========
@@ -143,12 +334,10 @@ class RTDEInterpolationController(mp.Process):
         if wait:
             self.start_wait()
         if self.verbose:
-            print(f"[RTDEPositionalController] Controller process spawned at {self.pid}")
+            print(f"[FrankaPositionalController] Controller process spawned at {self.pid}")
 
     def stop(self, wait=True):
-        message = {
-            'cmd': Command.STOP.value
-        }
+        message = {'cmd': np.array([int(Command.STOP.value)], dtype=np.int32)}
         self.input_queue.put(message)
         if wait:
             self.stop_wait()
@@ -192,7 +381,7 @@ class RTDEInterpolationController(mp.Process):
     def schedule_waypoint(self, pose, target_time):
         assert target_time > time.time()
         pose = np.array(pose)
-        assert pose.shape == (6,)
+        assert pose.shape == (6,) or (7,)
 
         message = {
             'cmd': Command.SCHEDULE_WAYPOINT.value,
@@ -211,96 +400,108 @@ class RTDEInterpolationController(mp.Process):
     def get_all_state(self):
         return self.ring_buffer.get_all()
     
-    # ========= main loop in process ============
-    def run(self):
-        # enable soft real-time
-        if self.soft_real_time:
-            os.sched_setscheduler(
-                0, os.SCHED_RR, os.sched_param(20))
+    # ========= main loop in process ===========
 
-        # start rtde
-        robot_ip = self.robot_ip
-        rtde_c = RTDEControlInterface(hostname=robot_ip)
-        rtde_r = RTDEReceiveInterface(hostname=robot_ip)
+    def run(self):
+        rclpy.init()
+        atexit.register(rclpy.shutdown)
+
+        rtde_c = FrankaDataPublisher(self.frequency)
+        rtde_r = FrankaDataCollector(self.shm_manager, self.get_max_k, self.frequency)
+        wait_time = 0.0
+        max_wait_time = 5.0  # seconds
+        poll_interval = 0.05  # seconds
+        
+        executor = rclpy.executors.MultiThreadedExecutor()
+        executor.add_node(rtde_c)
+        executor.add_node(rtde_r)
+        spin_thread = threading.Thread(target=executor.spin, daemon=True)
+        spin_thread.start()
+
+        while rtde_r.get_ring_buffer() is None and wait_time < max_wait_time:
+            time.sleep(poll_interval)
+            wait_time += poll_interval
+
+        self.ring_buffer = rtde_r.get_ring_buffer()
+
+        if self.ring_buffer is None:
+            raise RuntimeError("Ring buffer was not initialized within timeout.")
+
+    # Trap SIGINT and SIGTERM
+        def shutdown_handler(signum, frame):
+            print("\n[FrankaPositionalController] Shutdown signal received.")
+            self._terminate = True
+            self.ready_event.set()
+            executor.shutdown()
+            rtde_c.destroy_node()
+            rtde_r.destroy_node()
+            rclpy.shutdown()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, shutdown_handler)
+        signal.signal(signal.SIGTERM, shutdown_handler)
+        self._terminate = False
 
         try:
             if self.verbose:
-                print(f"[RTDEPositionalController] Connect to robot: {robot_ip}")
+                print(f"[FrankaPositionalController] Running at {self.frequency}Hz")
 
-            # set parameters
-            if self.tcp_offset_pose is not None:
-                rtde_c.setTcp(self.tcp_offset_pose)
-            if self.payload_mass is not None:
-                if self.payload_cog is not None:
-                    assert rtde_c.setPayload(self.payload_mass, self.payload_cog)
-                else:
-                    assert rtde_c.setPayload(self.payload_mass)
-            
-            # init pose
             if self.joints_init is not None:
-                assert rtde_c.moveJ(self.joints_init, self.joints_init_speed, 1.4)
+                rtde_c.joint_init(self.joints_init, self.joints_init_speed, 1.4)
 
-            # main loop
             dt = 1. / self.frequency
             curr_pose = rtde_r.getActualTCPPose()
-            # use monotonic time to make sure the control loop never go backward
+            position = curr_pose[:3]
+            quat = curr_pose[3:]
+            rotvec = R.from_quat([quat[0], quat[1], quat[2], quat[3]]).as_rotvec()
+            pose6d = np.concatenate((position, rotvec), axis=0)
+
+            
+            print(f"[FrankaPositionalController] Initial pose: {curr_pose}")
             curr_t = time.monotonic()
             last_waypoint_time = curr_t
             pose_interp = PoseTrajectoryInterpolator(
-                times=[curr_t],
-                poses=[curr_pose]
-            )
-            
+                times=np.array([curr_t]),
+                poses=np.array([pose6d]))
+
             iter_idx = 0
-            keep_running = True
-            while keep_running:
-                # start control iteration
-                t_start = rtde_c.initPeriod()
+            self.ready_event.set()
 
-                # send command to robot
+            while rclpy.ok() and not self._terminate:
+                t_start = time.perf_counter()
                 t_now = time.monotonic()
-                # diff = t_now - pose_interp.times[-1]
-                # if diff > 0:
-                #     print('extrapolate', diff)
-                pose_command = pose_interp(t_now)
-                vel = 0.5
-                acc = 0.5
-                assert rtde_c.servoL(pose_command, 
-                    vel, acc, # dummy, not used by ur5
-                    dt, 
-                    self.lookahead_time, 
-                    self.gain)
-                
-                # update robot state
-                state = dict()
-                for key in self.receive_keys:
-                    state[key] = np.array(getattr(rtde_r, 'get'+key)())
-                state['robot_receive_timestamp'] = time.time()
-                self.ring_buffer.put(state)
 
-                # fetch command from queue
+                pose_command = pose_interp(t_now)
+                pos = pose_command[:3]
+                rot = pose_command[3:]
+                quat = R.from_rotvec(rot).as_quat()
+                pose7d = np.concatenate((pos, quat), axis=0)
+                
+                rtde_c.joint_trajectory(pose7d, 0.5, 0.5, dt, self.lookahead_time, self.gain)
+
+                state = {}
+                for key in self.receive_keys:
+                    value = getattr(rtde_r, 'get' + key)()
+                    if value is not None:
+                        state[key] = np.array(value)
+                    else:
+                        if self.verbose:
+                            print(f"[FrankaPositionalController] Warning: {key} not available yet, skipping.")
+
+
                 try:
                     commands = self.input_queue.get_all()
                     n_cmd = len(commands['cmd'])
                 except Empty:
                     n_cmd = 0
 
-                # execute commands
                 for i in range(n_cmd):
-                    command = dict()
-                    for key, value in commands.items():
-                        command[key] = value[i]
+                    command = {key: value[i] for key, value in commands.items()}
                     cmd = command['cmd']
 
                     if cmd == Command.STOP.value:
-                        keep_running = False
-                        # stop immediately, ignore later commands
-                        break
+                        return  # Triggers finally
                     elif cmd == Command.SERVOL.value:
-                        # since curr_pose always lag behind curr_target_pose
-                        # if we start the next interpolation with curr_pose
-                        # the command robot receive will have discontinouity 
-                        # and cause jittery robot behavior.
                         target_pose = command['target_pose']
                         duration = float(command['duration'])
                         curr_time = t_now + dt
@@ -313,13 +514,9 @@ class RTDEInterpolationController(mp.Process):
                             max_rot_speed=self.max_rot_speed
                         )
                         last_waypoint_time = t_insert
-                        if self.verbose:
-                            print("[RTDEPositionalController] New pose target:{} duration:{}s".format(
-                                target_pose, duration))
                     elif cmd == Command.SCHEDULE_WAYPOINT.value:
                         target_pose = command['target_pose']
                         target_time = float(command['target_time'])
-                        # translate global time to monotonic time
                         target_time = time.monotonic() - time.time() + target_time
                         curr_time = t_now + dt
                         pose_interp = pose_interp.schedule_waypoint(
@@ -331,31 +528,36 @@ class RTDEInterpolationController(mp.Process):
                             last_waypoint_time=last_waypoint_time
                         )
                         last_waypoint_time = target_time
-                    else:
-                        keep_running = False
-                        break
 
-                # regulate frequency
-                rtde_c.waitPeriod(t_start)
-
-                # first loop successful, ready to receive command
-                if iter_idx == 0:
-                    self.ready_event.set()
-                iter_idx += 1
+                time_elapsed = time.perf_counter() - t_start
+                sleep_duration = max(0.0, dt - time_elapsed)
+                time.sleep(sleep_duration)
 
                 if self.verbose:
-                    print(f"[RTDEPositionalController] Actual frequency {1/(time.perf_counter() - t_start)}")
+                    print(f"[FrankaPositionalController] Iter {iter_idx} - Freq: {1 / (time.perf_counter() - t_start):.2f}Hz")
+                iter_idx += 1
 
+        except Exception as e:
+            print(f"[FrankaPositionalController] Exception: {e}")
         finally:
-            # manditory cleanup
-            # decelerate
-            rtde_c.servoStop()
+            print("[FrankaPositionalController] Cleaning up...")
 
-            # terminate
-            rtde_c.stopScript()
-            rtde_c.disconnect()
-            rtde_r.disconnect()
-            self.ready_event.set()
+            try:
+                executor.shutdown()
+            except Exception as e:
+                print(f"[Cleanup] Executor shutdown failed: {e}")
+    
+            try:
+                rtde_c.destroy_node()
+                rtde_r.destroy_node()
+            except Exception as e:
+                print(f"[Cleanup] Node destruction failed: {e}")
+    
+            rclpy.shutdown()
 
-            if self.verbose:
-                print(f"[RTDEPositionalController] Disconnected from robot: {robot_ip}")
+        if spin_thread.is_alive():
+            spin_thread.join(timeout=1.0)
+            print("[FrankaPositionalController] Spin thread joined.")
+
+        print("[FrankaPositionalController] Shutdown complete.")
+        sys.exit(0)
