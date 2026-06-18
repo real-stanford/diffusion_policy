@@ -53,7 +53,7 @@ dependencies:
   - pip:
     - ray[default,tune]==2.2.0
     # requires mujoco py dependencies libosmesa6-dev libgl1-mesa-glx libglfw3 patchelf
-    - free-mujoco-py==2.1.6
+    # - free-mujoco-py==2.1.6
     - pygame==2.1.2
     - pybullet-svl==3.1.6.4
     - robosuite @ https://github.com/cheng-chi/robosuite/archive/277ab9588ad7a4f4b55cf75508b44aa67ec171f0.tar.gz
@@ -62,4 +62,4 @@ dependencies:
     # pip package required for jpeg-xl
     - imagecodecs==2022.9.26
     - r3m @ https://github.com/facebookresearch/r3m/archive/b2334e726887fa0206962d7984c69c5fb09cceab.tar.gz
-    - dm-control==1.0.9
+    # - dm-control==1.0.9
