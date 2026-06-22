@@ -49,6 +49,10 @@ for i, dt in enumerate(column_list):
     chunk_size = 1024
   else:
     chunk_size = 64
+  if '.' in dt:
+    dt = dt.replace('.', '_')
+  if dt == "actions":
+    dt = "action"
   data.create_dataset(dt, data=tmp_data, chunks=(chunk_size, *tmp_data.shape[1:]))
 
 meta.create_dataset("episode_ends", data=np.array(episode_ends, dtype=np.int64))

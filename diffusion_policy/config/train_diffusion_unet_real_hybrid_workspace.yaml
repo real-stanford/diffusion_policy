@@ -42,8 +42,8 @@ policy:
   num_inference_steps: 8
   obs_as_global_cond: ${obs_as_global_cond}
   # crop_shape: [76, 76] # 84x84 90%
-  crop_shape: [216, 288] # ch, cw 320x240 90%
-  # crop_shape: null
+  # crop_shape: [224, 224] # ch, cw 320x240 90%
+  crop_shape: null
   diffusion_step_embed_dim: 128
   down_dims: [256,512,1024]
   kernel_size: 5
@@ -64,15 +64,15 @@ ema:
   max_value: 0.9999
 
 dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 1
+  num_workers: 1
   shuffle: True
   pin_memory: True
   persistent_workers: True
 
 val_dataloader:
-  batch_size: 64
-  num_workers: 8
+  batch_size: 1
+  num_workers: 1
   shuffle: False
   pin_memory: True
   persistent_workers: True

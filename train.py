@@ -33,3 +33,6 @@ def main(cfg: OmegaConf):
 
 if __name__ == "__main__":
     main()
+
+# Before using switch to `pip install huggingface-hub==0.25.2`
+
