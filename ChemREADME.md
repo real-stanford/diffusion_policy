@@ -15,6 +15,10 @@ Before starting downgrade `huggingface-hub`
 pip install huggingface-hub==0.25.2
 ```
 
+Run the `convert_parquet_to_zarr.py` file to convert the dataset.
+Under `diffusion_policy` create a `data` directory and copy the chemdroid data there. 
+
 Change `train_diffusion_unet_real_hybrid_workspace.yaml` to have adequate `batch_size`. I switched to 1 to run locally, but it was originally 64. 
 
 Currently, I'm not cropping the images further, they stay at 224 x 224. 
+
