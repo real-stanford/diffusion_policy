@@ -30,7 +30,7 @@ dependencies:
   - scikit-image=0.24.0
  # - gym=0.26.2
   - pymunk=6.8.1
-  - wandb
+  - wandb=0.26.1
   - threadpoolctl=3.5.0
   - shapely=2.0.6
   - cython=3.0.11
