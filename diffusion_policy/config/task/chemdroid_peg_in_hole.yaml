@@ -1,24 +1,18 @@
 name: chemdroid_peg_in_hole
 
 image_shape: [3, 224, 224]
-dataset_path: data/pusht_real/real_pusht_20230105
+dataset_path: data/chemdroid-insertion-zarr
 
 shape_meta: &shape_meta
   # acceptable types: rgb, low_dim
   obs:
-    # camera_0:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    base_0_rgb_bytes:
+    base_0_rgb:
       shape: ${task.image_shape}
       type: rgb
-    # camera_2:
+    # left_wrist_0_rgb:
     #   shape: ${task.image_shape}
     #   type: rgb
-    # left_wrist_0_rgb_bytes:
-    #   shape: ${task.image_shape}
-    #   type: rgb
-    # camera_4:
+    # left_wrist_0_rgb:
     #   shape: ${task.image_shape}
     #   type: rgb
     joint_position:
