@@ -1,4 +1,5 @@
 import zarr 
+import json 
 import numpy as np
 import pandas as pd
 
@@ -21,23 +22,26 @@ for pq in sorted(parquet_dir.glob("**/*.parquet")):
   break
 
 for pq in sorted(parquet_dir.glob("**/*.parquet")):
+  print(f"Processing file {pq.name}")
   df = pd.read_parquet(pq)
   dt_list = []
+  
   for dt in column_list:
-    if type(df[dt][0]).__name__ == 'bytes':
+    # print(f" {dt} of type {type(df[dt][0]).__name__}")
+    if type(df[dt][0]).__name__ == 'dict':
       column_data = []
       for img_name in df[dt].iloc:
-        img = Image.open(BytesIO(img_name))
+        img = Image.open(BytesIO(img_name['bytes']))
         column_data.append(img)
       column_data = np.stack(column_data)
     else: 
       column_data = np.stack(df[dt].to_numpy())
     dt_list.append(column_data)
-    print(f"column shape of {dt} is {dt_list[-1].shape}")
+    # print(f"column shape of {dt} is {dt_list[-1].shape}")
   dfs.append(tuple(dt_list))
   count += len(df)
   episode_ends.append(count)
-  break
+
 
 root = zarr.open(out_path, mode="w")
 data = root.create_group("data")
