@@ -1,4 +1,4 @@
-name: robodiff
+name: robodiff312
 channels:
   - pytorch
   - pytorch3d
@@ -58,7 +58,7 @@ dependencies:
     - pygame==2.6.0
     - pybullet-svl==3.1.6.4
     # - robosuite @ https://github.com/cheng-chi/robosuite/archive/277ab9588ad7a4f4b55cf75508b44aa67ec171f0.tar.gz
-    - robomimic==0.3.0
+    - robomimic==0.2.0
     - pytorchvideo==0.1.5
     # pip package required for jpeg-xl
     - imagecodecs==2024.6.1
