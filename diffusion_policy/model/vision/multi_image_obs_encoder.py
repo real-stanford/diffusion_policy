@@ -5,7 +5,7 @@ import torch.nn as nn
 import torchvision
 from diffusion_policy.model.vision.crop_randomizer import CropRandomizer
 from diffusion_policy.model.common.module_attr_mixin import ModuleAttrMixin
-from diffusion_policy.common.pytorch_util import dict_apply, replace_submodules
+from diffusion_policy.common.pytorch_util import replace_submodules
 
 
 class MultiImageObsEncoder(ModuleAttrMixin):
@@ -38,6 +38,14 @@ class MultiImageObsEncoder(ModuleAttrMixin):
         # handle sharing vision backbone
         if share_rgb_model:
             assert isinstance(rgb_model, nn.Module)
+            if use_group_norm:
+                rgb_model = replace_submodules(
+                    root_module=rgb_model,
+                    predicate=lambda x: isinstance(x, nn.BatchNorm2d),
+                    func=lambda x: nn.GroupNorm(
+                        num_groups=x.num_features // 16,
+                        num_channels=x.num_features)
+                )
             key_model_map['rgb'] = rgb_model
 
         obs_shape_meta = shape_meta['obs']
