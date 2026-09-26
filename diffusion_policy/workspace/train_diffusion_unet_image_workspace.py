@@ -172,13 +172,13 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                         loss.backward()
 
                         # step optimizer
-                        if self.global_step % cfg.training.gradient_accumulate_every == 0:
+                        if (self.global_step + 1) % cfg.training.gradient_accumulate_every == 0:
                             self.optimizer.step()
                             self.optimizer.zero_grad()
                             lr_scheduler.step()
                         
                         # update ema
-                        if cfg.training.use_ema:
+                        if cfg.training.use_ema and ((self.global_step + 1) % cfg.training.gradient_accumulate_every == 0):
                             ema.step(self.model)
 
                         # logging
