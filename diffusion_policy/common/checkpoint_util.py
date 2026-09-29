@@ -1,4 +1,5 @@
 from typing import Optional, Dict
+import math
 import os
 
 class TopKCheckpointManager:
@@ -24,6 +25,8 @@ class TopKCheckpointManager:
             return None
 
         value = data[self.monitor_key]
+        if not math.isfinite(value):
+            return None
         ckpt_path = os.path.join(
             self.save_dir, self.format_str.format(**data))
         
