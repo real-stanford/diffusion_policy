@@ -87,14 +87,11 @@ class LinearNormalizer(DictOfTensorMixin):
         input_stats = self.get_input_stats()
         if 'min' in input_stats:
             # no dict
-            return dict_apply(input_stats, self.normalize)
+            return _get_output_stats(self.params_dict['_default'])
         
         result = dict()
         for key, group in input_stats.items():
-            this_dict = dict()
-            for name, value in group.items():
-                this_dict[name] = self.normalize({key:value})[key]
-            result[key] = this_dict
+            result[key] = _get_output_stats(self.params_dict[key])
         return result
 
 
@@ -172,11 +169,24 @@ class SingleFieldLinearNormalizer(DictOfTensorMixin):
         return self.params_dict['input_stats']
 
     def get_output_stats(self):
-        return dict_apply(self.params_dict['input_stats'], self.normalize)
+        return _get_output_stats(self.params_dict)
 
     def __call__(self, x: Union[torch.Tensor, np.ndarray]) -> torch.Tensor:
         return self.normalize(x)
 
+
+
+def _get_output_stats(params):
+    scale = params['scale']
+    offset = params['offset']
+    stats = params['input_stats']
+    result = {name: value * scale + offset for name, value in stats.items()}
+    # A translation changes the mean, but does not change dispersion.
+    result['std'] = stats['std'] * scale.abs()
+    lower, upper = result['min'], result['max']
+    result['min'] = torch.minimum(lower, upper)
+    result['max'] = torch.maximum(lower, upper)
+    return result
 
 
 def _fit(data: Union[torch.Tensor, np.ndarray, zarr.Array],
