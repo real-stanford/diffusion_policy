@@ -539,6 +539,8 @@ class ReplayBuffer:
         return result
     
     def get_episode_slice(self, idx):
+        # Resolve negative indices exactly as get_episode does.
+        idx = list(range(len(self.episode_ends)))[idx]
         start_idx = 0
         if idx > 0:
             start_idx = self.episode_ends[idx-1]
@@ -588,3 +590,4 @@ class ReplayBuffer:
                 compressor = self.resolve_compressor(value)
                 if compressor != arr.compressor:
                     rechunk_recompress_array(self.data, key, compressor=compressor)
+
