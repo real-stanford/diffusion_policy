@@ -95,6 +95,10 @@ class PoseTrajectoryInterpolator:
 
         # insert new pose
         trimmed_interp = self.trim(curr_time, curr_time)
+        if duration == 0:
+            # A zero-duration command replaces the current pose. Slerp cannot
+            # represent two waypoints at the same timestamp.
+            return PoseTrajectoryInterpolator([curr_time], [pose])
         times = np.append(trimmed_interp.times, [last_waypoint_time], axis=0)
         poses = np.append(trimmed_interp.poses, [pose], axis=0)
 
@@ -177,6 +181,12 @@ class PoseTrajectoryInterpolator:
         last_waypoint_time = end_time + duration
 
         # insert new pose
+        if duration == 0:
+            # Replace the endpoint for an instantaneous command, keeping all
+            # earlier waypoints and strictly increasing interpolation times.
+            poses = trimmed_interp.poses.copy()
+            poses[-1] = pose
+            return PoseTrajectoryInterpolator(trimmed_interp.times, poses)
         times = np.append(trimmed_interp.times, [last_waypoint_time], axis=0)
         poses = np.append(trimmed_interp.poses, [pose], axis=0)
 
