@@ -27,6 +27,18 @@ class TopKCheckpointManager:
         ckpt_path = os.path.join(
             self.save_dir, self.format_str.format(**data))
         
+        if ckpt_path in self.path_value_map:
+            # A formatted filename can map several candidates to one slot.
+            # Improve that slot without evicting another checkpoint or deleting
+            # the file that the caller will replace after this method returns.
+            previous_value = self.path_value_map[ckpt_path]
+            improved = (value < previous_value if self.mode == 'min'
+                        else value > previous_value)
+            if improved:
+                self.path_value_map[ckpt_path] = value
+                return ckpt_path
+            return None
+
         if len(self.path_value_map) < self.k:
             # under-capacity
             self.path_value_map[ckpt_path] = value
