@@ -446,17 +446,29 @@ class ReplayBuffer:
             data: Dict[str, np.ndarray], 
             chunks: Optional[Dict[str,tuple]]=dict(),
             compressors: Union[str, numcodecs.abc.Codec, dict]=dict()):
-        assert(len(data) > 0)
+        if len(data) == 0:
+            raise ValueError("An episode must contain at least one data array.")
         is_zarr = (self.backend == 'zarr')
+
+        # Validate every field before resizing any array. Missing fields or a
+        # late shape error would otherwise leave the buffer partly updated.
+        missing_keys = set(self.data.keys()) - set(data.keys())
+        if missing_keys:
+            raise ValueError(f"Episode is missing existing data keys: {sorted(missing_keys)}")
 
         curr_len = self.n_steps
         episode_length = None
         for key, value in data.items():
-            assert(len(value.shape) >= 1)
+            if len(value.shape) < 1:
+                raise ValueError(f"Episode field {key!r} must have a time dimension.")
+            if len(value) == 0:
+                raise ValueError(f"Episode field {key!r} must contain at least one step.")
             if episode_length is None:
                 episode_length = len(value)
-            else:
-                assert(episode_length == len(value))
+            elif episode_length != len(value):
+                raise ValueError("All episode fields must have the same number of steps.")
+            if key in self.data and value.shape[1:] != self.data[key].shape[1:]:
+                raise ValueError(f"Episode field {key!r} has an incompatible sample shape.")
         new_len = curr_len + episode_length
 
         for key, value in data.items():
@@ -479,7 +491,6 @@ class ReplayBuffer:
                     self.data[key] = arr
             else:
                 arr = self.data[key]
-                assert(value.shape[1:] == arr.shape[1:])
                 # same method for both zarr and numpy
                 if is_zarr:
                     arr.resize(new_shape)
