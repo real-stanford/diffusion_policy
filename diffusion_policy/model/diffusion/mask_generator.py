@@ -63,9 +63,9 @@ class LowdimMaskGenerator(ModuleAttrMixin):
         assert D == (self.action_dim + self.obs_dim)
 
         # create all tensors on this device
-        rng = torch.Generator(device=device)
+        rng = None
         if seed is not None:
-            rng = rng.manual_seed(seed)
+            rng = torch.Generator(device=device).manual_seed(seed)
 
         # generate dim mask
         dim_mask = torch.zeros(size=shape, 
@@ -136,9 +136,9 @@ class KeypointMaskGenerator(ModuleAttrMixin):
         n_keypoints = all_keypoint_dims // self.keypoint_dim
         
         # create all tensors on this device
-        rng = torch.Generator(device=device)
+        rng = None
         if seed is not None:
-            rng = rng.manual_seed(seed)
+            rng = torch.Generator(device=device).manual_seed(seed)
         
         # generate dim mask
         dim_mask = torch.zeros(size=shape, 
