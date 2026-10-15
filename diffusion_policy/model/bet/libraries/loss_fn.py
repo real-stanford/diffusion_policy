@@ -105,9 +105,11 @@ class FocalLoss(nn.Module):
 
         unignored_mask = y != self.ignore_index
         y = y[unignored_mask]
-        if len(y) == 0:
-            return 0.0
         x = x[unignored_mask]
+        if len(y) == 0:
+            if self.reduction == "none":
+                return x.sum(dim=-1)
+            return x.sum()
 
         # compute weighted cross entropy term: -alpha * log(pt)
         # (alpha is already part of self.nll_loss)
