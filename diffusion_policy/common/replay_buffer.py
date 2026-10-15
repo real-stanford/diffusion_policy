@@ -57,7 +57,7 @@ def get_optimal_chunks(shape, dtype,
     """
     itemsize = np.dtype(dtype).itemsize
     # reversed
-    rshape = list(shape[::-1])
+    rshape = [max(1, size) for size in shape[::-1]]
     if max_chunk_length is not None:
         rshape[-1] = int(max_chunk_length)
     split_idx = len(shape)-1
@@ -95,8 +95,10 @@ class ReplayBuffer:
         assert('data' in root)
         assert('meta' in root)
         assert('episode_ends' in root['meta'])
+        episode_ends = root['meta']['episode_ends']
+        n_steps = episode_ends[-1] if len(episode_ends) > 0 else 0
         for key, value in root['data'].items():
-            assert(value.shape[0] == root['meta']['episode_ends'][-1])
+            assert(value.shape[0] == n_steps)
         self.root = root
     
     # ============= create constructors ===============
@@ -246,7 +248,7 @@ class ReplayBuffer:
                     name=key,
                     data=value, 
                     shape=value.shape, 
-                    chunks=value.shape)
+                    chunks=tuple(max(1, size) for size in value.shape))
         
         # save data, chunk
         data_group = root.create_group('data', overwrite=True)
