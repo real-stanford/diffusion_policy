@@ -63,9 +63,14 @@ class EMAModel:
         #     if data_ptr != 0:
         #         old_all_dataptrs.add(data_ptr)
 
-        all_dataptrs = set()
+        updated_parameters = set()
         for module, ema_module in zip(new_model.modules(), self.averaged_model.modules()):            
             for param, ema_param in zip(module.parameters(recurse=False), ema_module.parameters(recurse=False)):
+                # A parameter tied across different modules must receive exactly
+                # one EMA update, just as model.parameters() yields it once.
+                if id(ema_param) in updated_parameters:
+                    continue
+                updated_parameters.add(id(ema_param))
                 # iterative over immediate parameters only.
                 if isinstance(param, dict):
                     raise RuntimeError('Dict parameter not supported')
