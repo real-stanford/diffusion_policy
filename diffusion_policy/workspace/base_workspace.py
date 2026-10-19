@@ -94,6 +94,8 @@ class BaseWorkspace:
             path = self.get_checkpoint_path(tag=tag)
         else:
             path = pathlib.Path(path)
+        kwargs.setdefault('map_location', 'cpu')
+        kwargs.setdefault('weights_only', False)
         payload = torch.load(path.open('rb'), pickle_module=dill, **kwargs)
         self.load_payload(payload, 
             exclude_keys=exclude_keys, 
@@ -105,7 +107,8 @@ class BaseWorkspace:
             exclude_keys=None, 
             include_keys=None,
             **kwargs):
-        payload = torch.load(open(path, 'rb'), pickle_module=dill)
+        payload = torch.load(open(path, 'rb'), pickle_module=dill,
+            map_location='cpu', weights_only=False)
         instance = cls(payload['cfg'])
         instance.load_payload(
             payload=payload, 

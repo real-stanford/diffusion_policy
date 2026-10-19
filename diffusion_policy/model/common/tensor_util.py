@@ -311,7 +311,7 @@ def to_numpy(x):
         y (dict or list or tuple): new nested dict-list-tuple
     """
     def f(tensor):
-        if tensor.is_cuda:
+        if tensor.device.type != 'cpu':
             return tensor.detach().cpu().numpy()
         else:
             return tensor.detach().numpy()
@@ -338,7 +338,7 @@ def to_list(x):
         y (dict or list or tuple): new nested dict-list-tuple
     """
     def f(tensor):
-        if tensor.is_cuda:
+        if tensor.device.type != 'cpu':
             return tensor.detach().cpu().numpy().tolist()
         else:
             return tensor.detach().numpy().tolist()

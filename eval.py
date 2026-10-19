@@ -17,18 +17,20 @@ import dill
 import wandb
 import json
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
+from diffusion_policy.common.device_util import resolve_device
 
 @click.command()
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
-@click.option('-d', '--device', default='cuda:0')
+@click.option('-d', '--device', default=None, help='Default: xpu:0, cuda:0 or cpu, whichever is available first.')
 def main(checkpoint, output_dir, device):
     if os.path.exists(output_dir):
         click.confirm(f"Output path {output_dir} already exists! Overwrite?", abort=True)
     pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
     
     # load checkpoint
-    payload = torch.load(open(checkpoint, 'rb'), pickle_module=dill)
+    payload = torch.load(open(checkpoint, 'rb'), pickle_module=dill,
+        map_location='cpu', weights_only=False)
     cfg = payload['cfg']
     cls = hydra.utils.get_class(cfg._target_)
     workspace = cls(cfg, output_dir=output_dir)
@@ -40,7 +42,7 @@ def main(checkpoint, output_dir, device):
     if cfg.training.use_ema:
         policy = workspace.ema_model
     
-    device = torch.device(device)
+    device = resolve_device(device)
     policy.to(device)
     policy.eval()
     

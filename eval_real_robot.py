@@ -40,6 +40,7 @@ from diffusion_policy.real_world.real_inference_util import (
     get_real_obs_resolution, 
     get_real_obs_dict)
 from diffusion_policy.common.pytorch_util import dict_apply
+from diffusion_policy.common.device_util import resolve_device
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 from diffusion_policy.policy.base_image_policy import BaseImagePolicy
 from diffusion_policy.common.cv2_util import get_image_transform
@@ -80,7 +81,8 @@ def main(input, output, robot_ip, match_dataset, match_episode,
     
     # load checkpoint
     ckpt_path = input
-    payload = torch.load(open(ckpt_path, 'rb'), pickle_module=dill)
+    payload = torch.load(open(ckpt_path, 'rb'), pickle_module=dill,
+        map_location='cpu', weights_only=False)
     cfg = payload['cfg']
     cls = hydra.utils.get_class(cfg._target_)
     workspace = cls(cfg)
@@ -97,7 +99,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
         if cfg.training.use_ema:
             policy = workspace.ema_model
 
-        device = torch.device('cuda')
+        device = resolve_device(None)
         policy.eval().to(device)
 
         # set inference params
@@ -109,7 +111,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
         policy: BaseImagePolicy
         policy = workspace.model
 
-        device = torch.device('cuda')
+        device = resolve_device(None)
         policy.eval().to(device)
 
         # BCRNN always has action horizon of 1
@@ -123,7 +125,7 @@ def main(input, output, robot_ip, match_dataset, match_episode,
         policy.pred_n_iter = 5
         policy.pred_n_samples = 4096
 
-        device = torch.device('cuda')
+        device = resolve_device(None)
         policy.eval().to(device)
         steps_per_inference = 1
         action_offset = 1
