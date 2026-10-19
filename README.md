@@ -247,7 +247,7 @@ Then evaluate the same checkpoint with the XPU device:
 ```console
 (robodiff)[diffusion_policy]$ python eval.py --checkpoint data/0550-test_mean_score=0.969.ckpt --output_dir data/pusht_eval_output --device xpu:0
 ```
-Without `--device`, `eval.py` picks `xpu:0`, then `cuda:0`, then `cpu`. `eval_real_robot.py` picks the device the same way. Training, `train.py` and the ray multirun scripts are untouched and stay CUDA-oriented.
+Without `--device`, `eval.py` picks `xpu:0`, then `cuda:0`, then `cpu`. `eval_real_robot.py` picks the device the same way.
 
 ## 🦾 Demo, Training and Eval on a Real Robot
 Make sure your UR5 robot is running and accepting command from its network interface (emergency stop button within reach at all time), your RealSense cameras plugged in to your workstation (tested with `realsense-viewer`) and your SpaceMouse connected with the `spacenavd` daemon running (verify with `systemctl status spacenavd`).
